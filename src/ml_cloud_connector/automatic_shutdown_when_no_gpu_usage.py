@@ -1,6 +1,7 @@
 import os
 import time
 from math import floor
+from pathlib import Path
 
 import torch
 
@@ -18,15 +19,18 @@ def check_gpu_usage():
 
 
 def initiate_shutdown():
-    print("Shutting down in 30 minutes")
-    os.system("sudo shutdown -c")
+    print("Shutting down in 10 minutes")
     os.system("sudo shutdown +10")
 
 
 def automatic_shutdown():
     while True:
-        if not check_gpu_usage():
+        exists_shutdown_scheduled = Path("/run/systemd/shutdown/scheduled").exists()
+        if not check_gpu_usage() and not exists_shutdown_scheduled:
             initiate_shutdown()
+        else:
+            os.system("sudo shutdown -c")
+
         time.sleep(300)  # Check every 5 minutes
 
 

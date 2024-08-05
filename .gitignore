@@ -166,3 +166,4 @@ cython_debug/
 /detectron2/
 .env
 ovh.pub
+post_start_script.sh
