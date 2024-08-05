@@ -2,7 +2,7 @@ import os
 from os.path import join
 from pathlib import Path
 from crontab import CronTab
-from ml_cloud_connector.configuration import ROOT_PATH, SERVICE_PATH
+from configuration import ROOT_PATH, SERVICE_PATH
 
 
 def get_post_start_script():

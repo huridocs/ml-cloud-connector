@@ -3,7 +3,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
+ROOT_PATH = Path(os.path.abspath(__file__)).parent.parent.parent
 
 load_dotenv()
 
