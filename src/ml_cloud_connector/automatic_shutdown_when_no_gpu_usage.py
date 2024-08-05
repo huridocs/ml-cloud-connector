@@ -21,6 +21,8 @@ def check_gpu_usage():
 def initiate_shutdown():
     print("Shutting down in 10 minutes")
     os.system("sudo shutdown +10")
+    time.sleep(1)
+    os.remove("/etc/nologin")
 
 
 def automatic_shutdown():

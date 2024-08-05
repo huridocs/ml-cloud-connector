@@ -13,6 +13,7 @@ def get_post_start_script():
         for requirement in requirements:
             post_installation_script += f"pip install {requirement}\n"
 
+    post_installation_script += f"cd /home/debian/ml-cloud-connector ; git pull\n"
     automatic_shutdown_script_path = join(ROOT_PATH, 'src', 'ml_cloud_connector',
                                           "automatic_shutdown_when_no_gpu_usage.py")
     post_installation_script += f"nohup python3 {automatic_shutdown_script_path} &\n"

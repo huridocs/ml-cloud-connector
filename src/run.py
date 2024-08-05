@@ -6,7 +6,8 @@ from ml_cloud_connector.MlCloudConnector import MlCloudConnector
 def run():
     ml_cloud_connector = MlCloudConnector()
     start = time()
-    ml_cloud_connector.restart()
+    ml_cloud_connector.start()
+    # print(ml_cloud_connector.get_ip())
 
     for i in range(1000):
         print(ml_cloud_connector.is_active())
