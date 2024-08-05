@@ -32,5 +32,6 @@ def create_post_start_script():
 
 
 if __name__ == '__main__':
-    os.system(f"./{join(ROOT_PATH, 'src', 'ml_cloud_connector', 'setup.sh')}")
-    create_post_start_script()
+    os.system(f"chmod +x {join(ROOT_PATH, 'setup.sh')}")
+    os.system(f"sudo ./{join(ROOT_PATH, 'setup.sh')}")
+    # create_post_start_script()
