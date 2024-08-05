@@ -31,4 +31,5 @@ def create_post_start_script():
 
 
 if __name__ == '__main__':
+    os.system(f"./{join(ROOT_PATH, 'src', 'ml_cloud_connector', 'setup.sh')}")
     create_post_start_script()
