@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -8,8 +9,9 @@ load_dotenv()
 
 INSTANCE_ID = os.getenv("INSTANCE_ID")
 PROJECT_ID = os.getenv("PROJECT_ID")
+REGION = os.getenv("REGION")
+APP_KEY = os.getenv("APP_KEY")
+APP_SECRET = os.getenv("APP_SECRET")
+CONSUMER_KEY = os.getenv("CONSUMER_KEY")
 
-if __name__ == '__main__':
-    print(INSTANCE_ID)
-    print(PROJECT_ID)
-    print(ROOT_DIR)
+PUB_KEY_PATH = Path(ROOT_DIR, "ovh.pub")
