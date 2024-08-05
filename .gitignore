@@ -120,7 +120,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+src/.env
 .venv
 env/
 venv/
@@ -164,3 +164,4 @@ cython_debug/
 /model_output/
 /pdf_outputs/
 /detectron2/
+.env
