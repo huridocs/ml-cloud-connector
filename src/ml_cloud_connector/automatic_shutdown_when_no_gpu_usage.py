@@ -1,6 +1,7 @@
 import os
 import time
 from math import floor
+from os.path import exists
 from pathlib import Path
 
 import torch
@@ -19,10 +20,11 @@ def check_gpu_usage():
 
 
 def initiate_shutdown():
-    print("Shutting down in 10 minutes")
-    os.system("sudo shutdown +10")
+    print("Shutting down in 5 minutes")
+    os.system("sudo shutdown +5")
     time.sleep(1)
-    os.remove("/etc/nologin")
+    if exists("/run/nologin"):
+        os.remove("/run/nologin")
 
 
 def automatic_shutdown():
@@ -37,4 +39,5 @@ def automatic_shutdown():
 
 
 if __name__ == "__main__":
-    automatic_shutdown()
+    # automatic_shutdown()
+    initiate_shutdown()
