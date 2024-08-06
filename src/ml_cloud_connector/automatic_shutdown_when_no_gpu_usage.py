@@ -26,7 +26,7 @@ def automatic_shutdown():
 
         seconds_from_last_gpu_usage = round(time() - timestamp_last_gpu_usage)
 
-        print("Seconds from last gpu usage", seconds_from_last_gpu_usage, "s")
+        print("Seconds from last gpu usage", f"{seconds_from_last_gpu_usage}s")
         if seconds_from_last_gpu_usage > 300:
             os.system("sudo shutdown now")
 
