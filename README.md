@@ -30,3 +30,7 @@ python3 src/ml_cloud_connector/create_post_start_script.py
 [ ] Check OVH security to avoid extra charges
         [ ] Use VPN ? 
 
+
+<h2>Stop automatic shutdown</h2>
+
+ps aux  |  grep automatic_shutdown  |  awk '{print $2}'  |  xargs sudo kill -9
