@@ -1,20 +1,25 @@
+import tempfile
 import time
-from os.path import join
+from pathlib import Path
 
 import ovh
+import requests
 
-from ml_cloud_connector.configuration import REGION, APP_KEY, APP_SECRET, CONSUMER_KEY, PROJECT_ID, INSTANCE_ID, \
-    ROOT_PATH, SERVICE_PATH
+from ml_cloud_connector.configuration import REGION, APP_KEY, APP_SECRET, CONSUMER_KEY, PROJECT_ID, INSTANCE_ID
 
 
 class MlCloudConnector:
+    IP_CACHE_PATH = Path(tempfile.gettempdir(), f"{INSTANCE_ID}.txt")
+
     def __init__(self):
-        self.client = ovh.Client(
-            endpoint=REGION,
-            application_key=APP_KEY,
-            application_secret=APP_SECRET,
-            consumer_key=CONSUMER_KEY,
-        )
+        self.client = None
+        if APP_KEY and APP_SECRET and CONSUMER_KEY:
+            self.client = ovh.Client(
+                endpoint=REGION,
+                application_key=APP_KEY,
+                application_secret=APP_SECRET,
+                consumer_key=CONSUMER_KEY,
+            )
 
     def is_active(self):
         instance_info = self.client.get(f'/cloud/project/{PROJECT_ID}/instance/{INSTANCE_ID}/')
@@ -61,6 +66,19 @@ class MlCloudConnector:
 
         return self.start()
 
-    def get_ip(self):
+    def get_ip(self, port: int = 0) -> str:
+        if not self.client:
+            return "localhost"
+
+        service_running = requests.get(f"http://localhost:{port}", timeout=3).status_code == 200 if port else False
+
+        if service_running and self.IP_CACHE_PATH.exists():
+            return self.IP_CACHE_PATH.read_text()
+
+        if not self.start():
+            raise BrokenPipeError("MlCloudConnector failed to start the instance from get ip method")
+
         instance_info = self.client.get(f'/cloud/project/{PROJECT_ID}/instance/{INSTANCE_ID}/')
-        return instance_info["ipAddresses"][0]["ip"]
+        ip = instance_info["ipAddresses"][0]["ip"]
+        self.IP_CACHE_PATH.write_text(ip)
+        return ip
