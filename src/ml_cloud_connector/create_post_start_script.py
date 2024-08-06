@@ -33,3 +33,4 @@ def create_post_start_script():
 
 if __name__ == '__main__':
     create_post_start_script()
+    print("Cron added with automatic shutdown")

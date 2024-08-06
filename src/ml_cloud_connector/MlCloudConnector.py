@@ -34,7 +34,7 @@ class MlCloudConnector:
         if self.is_active():
             return True
 
-        self.client.post(f'/cloud/project/{PROJECT_ID}/instance/{INSTANCE_ID}/start')
+        self.ovh_request("start")
 
         for i in range(100):
             if self.is_active():
@@ -44,12 +44,20 @@ class MlCloudConnector:
 
         return False
 
+    def ovh_request(self, action: str):
+        for i in range(3):
+            try:
+                self.client.post(f'/cloud/project/{PROJECT_ID}/instance/{INSTANCE_ID}/{action}')
+                break
+            except ovh.exceptions.ResourceConflictError:
+                time.sleep(5)
+
     def stop(self):
         if not self.is_active():
             print("Already stopped")
             return True
 
-        self.client.post(f'/cloud/project/{PROJECT_ID}/instance/{INSTANCE_ID}/stop')
+        self.ovh_request("stop")
 
         for i in range(100):
             if not self.is_active():

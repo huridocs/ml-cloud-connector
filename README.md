@@ -11,6 +11,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
+python3 src/ml_cloud_connector/create_post_start_script.py
 ```
 
 <h2>To do</h2>
@@ -25,6 +26,7 @@ pip install -r requirements.txt
         [x] Default to localhost when no variables
         [x] Get ip should start server if stopped
         [ ] Write tests
-    [ ] Check OVH security to avoid extra charges
+        [ ] Catch error ovh.exceptions.ResourceConflictError on start or stop
+[ ] Check OVH security to avoid extra charges
         [ ] Use VPN ? 
 

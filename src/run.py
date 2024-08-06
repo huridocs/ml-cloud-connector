@@ -1,16 +1,15 @@
-from time import time
+from time import sleep
 
 from ml_cloud_connector.MlCloudConnector import MlCloudConnector
 
 
 def run():
     ml_cloud_connector = MlCloudConnector()
-    for i in range(10):
-        start = time()
-        print("start")
-
-        print(ml_cloud_connector.get_ip())
-        print("time", round(time() - start, 2), "s")
+    ml_cloud_connector.start()
+    # for i in range(1000):
+    #     if
+    #     ml_cloud_connector.start()
+    #     sleep(5)
 
 
 if __name__ == '__main__':
