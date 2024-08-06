@@ -72,7 +72,10 @@ class MlCloudConnector:
 
         service_running = requests.get(f"http://localhost:{port}", timeout=3).status_code == 200 if port else False
 
-        if service_running and self.IP_CACHE_PATH.exists():
+        if self.IP_CACHE_PATH.exists() and service_running:
+            return self.IP_CACHE_PATH.read_text()
+
+        if self.IP_CACHE_PATH.exists() and self.is_active():
             return self.IP_CACHE_PATH.read_text()
 
         if not self.start():

@@ -20,11 +20,10 @@ def check_gpu_usage():
 
 
 def initiate_shutdown():
-    print("Shutting down in 5 minutes")
     os.system("sudo shutdown +5")
-    time.sleep(1)
     if exists("/run/nologin"):
         os.remove("/run/nologin")
+    print("Shutting down in 5 minutes")
 
 
 def automatic_shutdown():
@@ -35,9 +34,8 @@ def automatic_shutdown():
         else:
             os.system("sudo shutdown -c")
 
-        time.sleep(300)  # Check every 5 minutes
+        time.sleep(270)  # Check every 4.5 minutes
 
 
 if __name__ == "__main__":
-    # automatic_shutdown()
-    initiate_shutdown()
+    automatic_shutdown()
