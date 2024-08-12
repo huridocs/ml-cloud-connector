@@ -13,6 +13,7 @@ class MlCloudConnector:
     def __init__(self):
         self.client = None
         if PROJECT_ID and ZONE and INSTANCE_ID:
+            # You should loging first with gcloud auth application-default login
             self.client = compute_v1.InstancesClient()
             self.project = PROJECT_ID
             self.zone = ZONE
