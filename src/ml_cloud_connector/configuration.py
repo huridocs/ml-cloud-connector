@@ -14,5 +14,6 @@ REGION = os.getenv("REGION")
 APP_KEY = os.getenv("APP_KEY")
 APP_SECRET = os.getenv("APP_SECRET")
 CONSUMER_KEY = os.getenv("CONSUMER_KEY")
+ZONE = os.getenv("ZONE")
 
 PUB_KEY_PATH = Path(ROOT_PATH, "ovh.pub")

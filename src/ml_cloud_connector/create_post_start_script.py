@@ -7,6 +7,7 @@ from configuration import ROOT_PATH, SERVICE_PATH
 
 def get_post_start_script():
     post_installation_script = f"#!/bin/bash\n"
+    post_installation_script += "sudo shutdown +1440\n"
     with open(join(ROOT_PATH, "requirements.txt")) as f:
         requirements = f.read().splitlines()
 

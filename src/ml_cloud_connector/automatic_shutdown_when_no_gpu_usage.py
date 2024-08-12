@@ -1,36 +1,38 @@
+import subprocess
+import time
 import os
-from math import floor
-from time import sleep, time
 
-import torch
+GPU_MEMORY_THRESHOLD = 1000
+INACTIVITY_THRESHOLD = 300
+CHECK_INTERVAL = 60
 
 
-def get_gb_gpu_memory_in_use() -> int:
-    free_total_memory = torch.cuda.mem_get_info()
-    return floor((free_total_memory[1] - free_total_memory[0]) / 1024 ** 3)
+def get_gpu_memory_usage():
+    try:
+        output = subprocess.check_output(['nvidia-smi', '--query-gpu=memory.used', '--format=csv,nounits,noheader'])
+    except FileNotFoundError:
+        return 0
+    return int(output.decode('utf-8').strip())
 
 
 def is_gpu_in_use():
-    if not torch.cuda.is_available():
-        return False
-
-    return get_gb_gpu_memory_in_use() >= 1
+    return get_gpu_memory_usage() >= GPU_MEMORY_THRESHOLD
 
 
 def automatic_shutdown():
-    timestamp_last_gpu_usage = time()
+    last_usage_time = time.time()
+
     while True:
         if is_gpu_in_use():
-            print("Waiting 5 more minutes")
-            timestamp_last_gpu_usage = time()
+            last_usage_time = time.time()
+        else:
+            idle_time = int(time.time() - last_usage_time)
 
-        seconds_from_last_gpu_usage = round(time() - timestamp_last_gpu_usage)
+            if idle_time > INACTIVITY_THRESHOLD:
+                print("Inactivity threshold reached. Shutting down...")
+                os.system("sudo shutdown now")
 
-        print("Seconds from last gpu usage", f"{seconds_from_last_gpu_usage}s")
-        if seconds_from_last_gpu_usage > 300:
-            os.system("sudo shutdown now")
-
-        sleep(60)
+        time.sleep(CHECK_INTERVAL)
 
 
 if __name__ == "__main__":
