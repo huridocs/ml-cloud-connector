@@ -12,7 +12,7 @@ def get_gpu_memory_usage():
         output = subprocess.check_output(['nvidia-smi', '--query-gpu=memory.used', '--format=csv,nounits,noheader'])
     except FileNotFoundError:
         return 0
-    return int(output.decode('utf-8').strip())
+    return sum([int(memory) for memory in output.split()])
 
 
 def is_gpu_in_use():
