@@ -5,6 +5,13 @@ from dotenv import load_dotenv
 
 ROOT_PATH = Path(os.path.abspath(__file__)).parent.parent.parent
 
+CREDENTIALS = os.environ.get("CREDENTIALS", "")
+
+if CREDENTIALS:
+    google_application_credentials_path = Path("/", "tmp", "credentials.json")
+    google_application_credentials_path.write_text(CREDENTIALS)
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(google_application_credentials_path)
+
 load_dotenv()
 
 SERVICE_PATH = os.getenv("SERVICE_PATH")

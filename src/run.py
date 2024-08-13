@@ -1,18 +1,17 @@
-from time import sleep
+from time import time
 
 from ml_cloud_connector.MlCloudConnector import MlCloudConnector
 
 
 def run():
+    start = time()
+    print("start")
     ml_cloud_connector = MlCloudConnector()
-    print(ml_cloud_connector.get_ip())
 
-    # for i in range(1000):
-    #     if ml_cloud_connector.is_active():
-    #         print("Instance is active")
-    #     else:
-    #         print("Instance is not active")
-    #     sleep(10)
+    print("time", round(time() - start, 2), "s")
+    start = time()
+    print(ml_cloud_connector.start())
+    print("time", round(time() - start, 2), "s")
 
 
 if __name__ == '__main__':
