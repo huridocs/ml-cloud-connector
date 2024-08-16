@@ -8,10 +8,11 @@ apt install python3.10-venv -y
 apt install python3.11-venv -y
 apt install python3.12-venv -y
 pip install --upgrade pip
-echo "'start_detached:
+echo "start_detached:
 	sudo service ollama stop
-	OLLAMA_HOST=0.0.0.0:11434 nohup ollama serve &'" | sudo tee "/opt/Makefile" > /dev/null
+	sudo OLLAMA_HOST=0.0.0.0:11434 nohup ollama serve &" | sudo tee "/opt/Makefile" > /dev/null
 chmod +x /opt/Makefile
+(crontab -l 2>/dev/null; echo "@reboot make -C /opt start_detached") | crontab -
 gcloud auth login
 gcloud compute firewall-rules create allow-ollama --allow tcp:11434 --target-tags=ollama-server
 INSTANCE_NAME=$(curl http://metadata.google.internal/computeMetadata/v1/instance/hostname -H Metadata-Flavor:Google | cut -d . -f1)
