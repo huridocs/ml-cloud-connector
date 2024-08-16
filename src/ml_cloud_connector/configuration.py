@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 
@@ -9,6 +10,8 @@ CREDENTIALS = os.environ.get("CREDENTIALS", "")
 
 if CREDENTIALS:
     google_application_credentials_path = Path("/", "tmp", "credentials.json")
+    if type(CREDENTIALS) == str and '"' == CREDENTIALS.strip()[0] and '"' == CREDENTIALS.strip()[-1]:
+        CREDENTIALS = json.dumps(json.loads(CREDENTIALS.strip()[1:-1]))
     google_application_credentials_path.write_text(CREDENTIALS)
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(google_application_credentials_path)
 
