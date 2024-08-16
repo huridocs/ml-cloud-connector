@@ -123,6 +123,11 @@ To add this firewall rule to the instance:
 gcloud compute instances add-tags [instance_name] --tags ollama-server --zone [zone]
 ```
 
+gcloud compute instances remove-tags instance-20240812-20240814-162517 --tags ollama-server --zone europe-west4-c
+gcloud compute instances update instance-20240812-20240814-162517 --zone=europe-west4-c --remove-tags=ollama-server
+gcloud compute instances add-tags instance-20240812-20240814-162517 --tags ollama-server --zone europe-west4-c
+sudo netstat -tuln | grep 11434
+
 - To delete the rule:
 ```
 gcloud compute firewall-rules delete allow-ollama
