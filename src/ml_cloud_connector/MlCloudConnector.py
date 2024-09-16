@@ -1,9 +1,13 @@
+import logging
 import tempfile
 import time
-from pathlib import Path
-
+import inspect
 import requests
+from httpx import ConnectTimeout, HTTPStatusError, ReadTimeout
+from pathlib import Path
+from typing import Callable
 from google.cloud import compute_v1
+
 from ml_cloud_connector.configuration import PROJECT_ID, ZONE, INSTANCE_ID
 
 
@@ -76,6 +80,39 @@ class MlCloudConnector:
 
         instance_info = self.client.get(project=self.project, zone=self.zone, instance=self.instance)
         return instance_info.network_interfaces[0].access_configs[0].nat_i_p
+
+    def execute(self, function: Callable, service_logger: logging.Logger, *args, **kwargs):
+        signature = inspect.signature(function)
+        connection_wait_time = 180
+        reconnect_trial_count = 0
+        request_trial_count = 0
+        while reconnect_trial_count < 10:
+            try:
+                bound_args = signature.bind(*args, **kwargs)
+                bound_args.apply_defaults()
+                return_value = function(*bound_args.args, **bound_args.kwargs)
+                return return_value, True, ""
+            except ReadTimeout:
+                if request_trial_count == 5:
+                    return "There is a problem with getting the response.", False
+                service_logger.warning(f"Response timeout. Retrying... [Trial: {request_trial_count + 1}]")
+                request_trial_count += 1
+
+            except (ConnectTimeout, HTTPStatusError, KeyError):
+                service_logger.error(f"Connection timeout. Retrying... [Trial: {reconnect_trial_count + 1}]")
+                self.stop()
+                time.sleep(connection_wait_time)
+                connection_wait_time *= 1.5
+                if connection_wait_time > 900:
+                    connection_wait_time = 900
+                self.start()
+                time.sleep(30)
+                reconnect_trial_count += 1
+            except Exception as e:
+                raise Exception(f"Error in executing the function: {str(e)}")
+        return None, False, "Response not returned. Server error."
+
+
 
     def is_gpu_available(self):
         instance_info = self.client.get(project=self.project, zone=self.zone, instance=self.instance)
