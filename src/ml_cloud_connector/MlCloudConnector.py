@@ -3,7 +3,7 @@ import tempfile
 import time
 import inspect
 import requests
-from httpx import ConnectTimeout, HTTPStatusError, ReadTimeout
+from httpx import ConnectTimeout, HTTPStatusError, ReadTimeout, RemoteProtocolError
 from pathlib import Path
 from typing import Callable
 from google.cloud import compute_v1
@@ -98,7 +98,7 @@ class MlCloudConnector:
                 service_logger.warning(f"Response timeout. Retrying... [Trial: {request_trial_count + 1}]")
                 request_trial_count += 1
 
-            except (ConnectTimeout, HTTPStatusError, KeyError):
+            except (ConnectTimeout, HTTPStatusError, RemoteProtocolError, KeyError):
                 service_logger.error(f"Connection timeout. Retrying... [Trial: {reconnect_trial_count + 1}]")
                 self.stop()
                 time.sleep(connection_wait_time)
