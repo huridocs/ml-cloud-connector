@@ -80,6 +80,7 @@ class MlCloudConnector:
 
         while not self.start():
             self.switch_to_new_instance()
+            time.sleep(300)
 
         # if not self.start():
         #     raise BrokenPipeError("MlCloudConnector failed to start the instance from get ip method")
@@ -275,8 +276,8 @@ class MlCloudConnector:
                 }
             ]
 
-        max_retries = 2
-        delay = 10
+        max_retries = 3
+        delay = 60
 
         for attempt in range(max_retries):
             try:
@@ -414,7 +415,6 @@ class MlCloudConnector:
                     print("Instance creation failed on all available zones.")
                 else:
                     continue
-        return self.start()
 
 
 
