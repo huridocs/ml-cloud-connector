@@ -3,6 +3,7 @@ import tempfile
 import time
 import inspect
 import requests
+from requests.exceptions import ConnectionError
 from google.api_core.exceptions import GoogleAPICallError
 from googleapiclient import discovery
 from googleapiclient.errors import HttpError
@@ -41,6 +42,18 @@ class MlCloudConnector:
             print("Instance is active")
             return True
         return False
+
+    def start_attempt_with_instance_switch(self):
+        while not self.start():
+            switched = self.switch_to_new_instance()
+            if switched:
+                self.stop()
+                time.sleep(120)
+            else:
+                wait_time = 300
+                print("Switching to new instance failed on all available zones.")
+                print(f"The process will be restarted after {wait_time} seconds.")
+                time.sleep(wait_time)
 
     def start(self):
         if self.is_active():
@@ -87,17 +100,7 @@ class MlCloudConnector:
         if self.IP_CACHE_PATH.exists() and self.is_active():
             return self.IP_CACHE_PATH.read_text()
 
-        while not self.start():
-            switched = self.switch_to_new_instance()
-            if switched:
-                self.stop()
-                time.sleep(120)
-            else:
-                wait_time = 300
-                print("Switching to new instance failed on all available zones.")
-                print(f"The process will be restarted after {wait_time} seconds.")
-                time.sleep(wait_time)
-
+        self.start_attempt_with_instance_switch()
         instance_info = self.client.get(project=self.project, zone=self.zone, instance=self.instance)
         return instance_info.network_interfaces[0].access_configs[0].nat_i_p
 
@@ -118,14 +121,14 @@ class MlCloudConnector:
                 service_logger.warning(f"Response timeout. Retrying... [Trial: {request_trial_count + 1}]")
                 request_trial_count += 1
 
-            except (ConnectTimeout, HTTPStatusError, RemoteProtocolError, KeyError):
+            except (ConnectionError, ConnectTimeout, HTTPStatusError, RemoteProtocolError, KeyError):
                 service_logger.error(f"Connection timeout. Retrying... [Trial: {reconnect_trial_count + 1}]")
                 self.stop()
                 time.sleep(connection_wait_time)
                 connection_wait_time *= 1.5
                 if connection_wait_time > 900:
                     connection_wait_time = 900
-                self.start()
+                self.start_attempt_with_instance_switch()
                 time.sleep(30)
                 reconnect_trial_count += 1
             except Exception as e:
