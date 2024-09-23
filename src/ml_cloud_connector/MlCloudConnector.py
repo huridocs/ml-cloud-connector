@@ -1,10 +1,8 @@
 import json
 import logging
-import os
 import tempfile
 import time
 import inspect
-import requests
 from requests.exceptions import ConnectionError
 from google.api_core.exceptions import GoogleAPICallError
 from googleapiclient import discovery
@@ -203,7 +201,8 @@ class MlCloudConnector:
                 self.instance = new_instance["id"]
                 self.zone = target_zone
                 cache_content_dict = json.loads(self.CLOUD_CACHE_PATH.read_text())
-                cache_content_dict.pop("IP_ADDRESS")
+                if "IP_ADDRESS" in cache_content_dict:
+                    cache_content_dict.pop("IP_ADDRESS")
                 cache_content_dict["ZONE"] = self.zone
                 cache_content_dict["INSTANCE"] = self.instance
                 self.CLOUD_CACHE_PATH.write_text(json.dumps(cache_content_dict))
