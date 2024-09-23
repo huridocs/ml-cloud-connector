@@ -14,5 +14,5 @@ def run():
     print("time", round(time() - start, 2), "s")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run()

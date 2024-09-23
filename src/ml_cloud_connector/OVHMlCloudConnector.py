@@ -22,7 +22,7 @@ class MlCloudConnector:
             )
 
     def is_active(self):
-        instance_info = self.client.get(f'/cloud/project/{PROJECT_ID}/instance/{INSTANCE_ID}/')
+        instance_info = self.client.get(f"/cloud/project/{PROJECT_ID}/instance/{INSTANCE_ID}/")
 
         if instance_info["status"] == "ACTIVE":
             print("Instance is active")
@@ -47,7 +47,7 @@ class MlCloudConnector:
     def ovh_request(self, action: str):
         for i in range(3):
             try:
-                self.client.post(f'/cloud/project/{PROJECT_ID}/instance/{INSTANCE_ID}/{action}')
+                self.client.post(f"/cloud/project/{PROJECT_ID}/instance/{INSTANCE_ID}/{action}")
                 break
             except ovh.exceptions.ResourceConflictError:
                 time.sleep(5)
@@ -89,7 +89,7 @@ class MlCloudConnector:
         if not self.start():
             raise BrokenPipeError("MlCloudConnector failed to start the instance from get ip method")
 
-        instance_info = self.client.get(f'/cloud/project/{PROJECT_ID}/instance/{INSTANCE_ID}/')
+        instance_info = self.client.get(f"/cloud/project/{PROJECT_ID}/instance/{INSTANCE_ID}/")
         ip = instance_info["ipAddresses"][0]["ip"]
         self.IP_CACHE_PATH.write_text(ip)
         return ip

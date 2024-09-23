@@ -9,7 +9,7 @@ CHECK_INTERVAL = 60
 
 def get_gpu_memory_usage():
     try:
-        output = subprocess.check_output(['nvidia-smi', '--query-gpu=memory.used', '--format=csv,nounits,noheader'])
+        output = subprocess.check_output(["nvidia-smi", "--query-gpu=memory.used", "--format=csv,nounits,noheader"])
     except FileNotFoundError:
         return 0
     return sum([int(memory) for memory in output.split()])
