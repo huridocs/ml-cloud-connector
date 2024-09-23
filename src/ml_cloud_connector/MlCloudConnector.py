@@ -1,4 +1,5 @@
 import logging
+import os
 import tempfile
 import time
 import inspect
@@ -199,6 +200,8 @@ class MlCloudConnector:
                 self.service_logger.info(f"Instance snapshot-{self.instance}-instance created in zone {target_zone}.")
                 self.instance = new_instance["id"]
                 self.zone = target_zone
+                os.environ["INSTANCE_ID"] = self.instance
+                os.environ["ZONE"] = self.zone
                 return True
 
             except (GoogleAPICallError, HttpError) as err:

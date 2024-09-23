@@ -9,7 +9,7 @@ setup(
     name=PROJECT_NAME,
     packages=["ml_cloud_connector"],
     package_dir={"": "src"},
-    version="0.85",
+    version="0.86",
     url="https://github.com/gabriel-piles/ml-cloud-connector",
     author="HURIDOCS",
     description="This tool is a ml cloud connector",
