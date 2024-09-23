@@ -39,7 +39,7 @@ class MlCloudConnector:
     def is_active(self):
         instance_info = self.client.get(project=self.project, zone=self.zone, instance=self.instance)
         if instance_info.status == "RUNNING":
-            print("Instance is active")
+            self.service_logger.info("Instance is active")
             return True
         return False
 
@@ -51,8 +51,8 @@ class MlCloudConnector:
                 time.sleep(120)
             else:
                 wait_time = 300
-                print("Switching to new instance failed on all available zones.")
-                print(f"The process will be restarted after {wait_time} seconds.")
+                self.service_logger.info("Switching to new instance failed on all available zones.")
+                self.service_logger.info(f"The process will be restarted after {wait_time} seconds.")
                 time.sleep(wait_time)
 
     def start(self):
@@ -70,14 +70,14 @@ class MlCloudConnector:
 
     def stop(self):
         if not self.is_active():
-            print("Already stopped")
+            self.service_logger.info("Already stopped")
             return True
 
         self.client.stop(project=self.project, zone=self.zone, instance=self.instance)
 
         for i in range(100):
             if not self.is_active():
-                print("stopped")
+                self.service_logger.info("stopped")
                 return True
             time.sleep(5)
             self.client.stop(project=self.project, zone=self.zone, instance=self.instance)
@@ -142,7 +142,7 @@ class MlCloudConnector:
     def get_zones_with_accelerator(self, compute, accelerator_type, machine_type):
         zones_with_accelerator = []
         zones_request = compute.zones().list(project=self.project)
-        print(f"\nGetting available zones for '{accelerator_type}' and '{machine_type}'...")
+        self.service_logger.info(f"\nGetting available zones for '{accelerator_type}' and '{machine_type}'...")
 
         while zones_request is not None:
             response = zones_request.execute()
@@ -153,10 +153,10 @@ class MlCloudConnector:
                     if zone_available:
                         zones_with_accelerator.append(zone_name)
                 except HttpError as e:
-                    print(f"Error checking accelerators in zone {zone_name}: {e}")
+                    self.service_logger.info(f"Error checking accelerators in zone {zone_name}: {e}")
             zones_request = compute.zones().list_next(previous_request=zones_request, previous_response=response)
 
-        print(f"Available zones for '{accelerator_type}' and '{machine_type}': {zones_with_accelerator}")
+        self.service_logger.info(f"Available zones for '{accelerator_type}' and '{machine_type}': {zones_with_accelerator}")
 
         return zones_with_accelerator
 
@@ -175,9 +175,9 @@ class MlCloudConnector:
         snapshot_name = f"snapshot-{self.instance}"
         new_instance_name = f"snapshot-{self.instance}-instance"
         new_disk_name = f"snapshot-{self.instance}-disk"
-        disk_operator = MlCloudDiskOperator(self.project)
-        snapshot_operator = MlCloudSnapshotOperator(self.project)
-        instance_operator = MlCloudInstanceOperator(self.project, self.zone, self.instance)
+        disk_operator = MlCloudDiskOperator(self.project, self.service_logger)
+        snapshot_operator = MlCloudSnapshotOperator(self.project, self.service_logger)
+        instance_operator = MlCloudInstanceOperator(self.project, self.zone, self.instance, self.service_logger)
 
         available_zones = self.get_zones_with_accelerator(compute, accelerator_type, machine_type)
         target_zones = [zone for zone in available_zones if zone.startswith("europe-west4")]
@@ -189,24 +189,24 @@ class MlCloudConnector:
         snapshot_operator.prepare_snapshot(compute, self.zone, snapshot_name, boot_disk)
 
         for target_zone in target_zones:
-            print(f"\nAttempting to create instance in zone: {target_zone}")
+            self.service_logger.info(f"\nAttempting to create instance in zone: {target_zone}")
             disk_operator.prepare_disk(compute, target_zone, new_disk_name, snapshot_name)
             try:
                 new_instance = instance_operator.create_instance(
                     compute, target_zone, new_disk_name, base_instance, new_instance_name, accelerator_type, machine_type
                 )
-                print(f"Instance snapshot-{self.instance}-instance created in zone {target_zone}.")
+                self.service_logger.info(f"Instance snapshot-{self.instance}-instance created in zone {target_zone}.")
                 self.instance = new_instance["id"]
                 self.zone = target_zone
                 return True
 
             except (GoogleAPICallError, HttpError) as err:
-                print(f"An error occurred while creating the instance on {target_zone}: {err}")
+                self.service_logger.info(f"An error occurred while creating the instance on {target_zone}: {err}")
                 disk_operator.delete_disk(target_zone, new_disk_name)
                 continue
 
             except Exception as e:
-                print(f"An unexpected error occurred: {e}")
+                self.service_logger.info(f"An unexpected error occurred: {e}")
                 raise
         return False
 

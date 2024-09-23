@@ -4,10 +4,11 @@ from ml_cloud_connector.wait_for_operation import wait_for_operation
 
 
 class MlCloudInstanceOperator:
-    def __init__(self, project, zone, instance):
+    def __init__(self, project, zone, instance, service_logger):
         self.project = project
         self.zone = zone
         self.instance = instance
+        self.service_logger = service_logger
 
     def create_instance(
         self,
@@ -21,7 +22,7 @@ class MlCloudInstanceOperator:
         accelerator_count=1,
     ):
 
-        print(f"Creating new instance: {new_instance_name} in zone {target_zone}")
+        self.service_logger.info(f"Creating new instance: {new_instance_name} in zone {target_zone}")
         machine_type_full = f"projects/{self.project}/zones/{target_zone}/machineTypes/{machine_type}"
         network_interface = instance["networkInterfaces"][0]
         config = {
@@ -68,10 +69,12 @@ class MlCloudInstanceOperator:
 
             except GoogleAPICallError as e:
                 if attempt < max_retries - 1:
-                    print(f"Resources not available. Retrying in {delay} seconds... [Trial: {attempt + 1}]")
+                    self.service_logger.info(
+                        f"Resources not available. Retrying in {delay} seconds... [Trial: {attempt + 1}]"
+                    )
                     time.sleep(delay)
                 else:
-                    print(f"Max retries [{max_retries}] reached. Trying other zones...")
+                    self.service_logger.info(f"Max retries [{max_retries}] reached. Trying other zones...")
                     raise
 
         new_instance = compute.instances().get(project=self.project, zone=target_zone, instance=new_instance_name).execute()
