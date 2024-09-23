@@ -120,7 +120,8 @@ class MlCloudConnector:
             except (ConnectError, ReadTimeout):
                 if request_trial_count == 10:
                     return None, False, "There is a problem with getting the response."
-                service_logger.warning(f"Response timeout. Retrying... [Trial: {request_trial_count + 1}]")
+                service_logger.warning(f"Response timeout. Retrying in 30 seconds.. [Trial: {request_trial_count + 1}]")
+                time.sleep(30)
                 request_trial_count += 1
 
             except (ConnectionError, ConnectTimeout, HTTPStatusError, RemoteProtocolError, KeyError):
