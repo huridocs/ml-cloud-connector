@@ -64,7 +64,7 @@ class MlCloudInstanceOperator:
         for attempt in range(max_retries):
             try:
                 operation = compute.instances().insert(project=self.project, zone=target_zone, body=config).execute()
-                wait_for_operation(self.project, compute, operation)
+                wait_for_operation(self.project, compute, operation, self.service_logger)
                 break
 
             except GoogleAPICallError as e:

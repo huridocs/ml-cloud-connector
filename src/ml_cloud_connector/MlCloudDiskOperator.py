@@ -34,7 +34,7 @@ class MlCloudDiskOperator:
             "type": f"projects/{self.project}/zones/{target_zone}/diskTypes/pd-standard",
         }
         operation = compute.disks().insert(project=self.project, zone=target_zone, body=disk_body).execute()
-        wait_for_operation(self.project, compute, operation)
+        wait_for_operation(self.project, compute, operation, self.service_logger)
 
     def delete_disk(self, zone, disk_name):
         self.service_logger.info(f"Deleting disk: {disk_name} in zone {zone}")

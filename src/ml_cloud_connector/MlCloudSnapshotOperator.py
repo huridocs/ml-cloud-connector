@@ -31,7 +31,7 @@ class MlCloudSnapshotOperator:
         operation = (
             compute.disks().createSnapshot(project=self.project, zone=zone, disk=boot_disk, body=snapshot_body).execute()
         )
-        wait_for_operation(self.project, compute, operation)
+        wait_for_operation(self.project, compute, operation, self.service_logger)
 
     def prepare_snapshot(self, compute, zone, snapshot_name, boot_disk):
         if not self.snapshot_exists(compute, snapshot_name):

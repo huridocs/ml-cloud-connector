@@ -3,8 +3,8 @@ import time
 from google.api_core.exceptions import GoogleAPICallError
 
 
-def wait_for_operation(project, compute, operation):
-    print("Waiting for operation to finish...")
+def wait_for_operation(project, compute, operation, service_logger):
+    service_logger.info("Waiting for operation to finish...")
     operation_name = operation["name"]
 
     if "zone" in operation:
@@ -31,8 +31,8 @@ def wait_for_operation(project, compute, operation):
             raise Exception(result["error"])
 
         if result["status"] == "DONE":
-            print("Operation completed.")
+            service_logger.info("Operation completed.")
             if "error" in result:
-                print("Error in operation:", result["error"])
+                service_logger.info("Error in operation:", result["error"])
             break
         time.sleep(5)
