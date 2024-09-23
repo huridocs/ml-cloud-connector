@@ -3,17 +3,14 @@ import logging
 import tempfile
 import time
 import inspect
-from os import remove
-
 from requests.exceptions import ConnectionError
-from google.api_core.exceptions import GoogleAPICallError, BadRequest
+from google.api_core.exceptions import GoogleAPICallError, BadRequest, NotFound
 from googleapiclient import discovery
 from googleapiclient.errors import HttpError
 from httpx import ConnectTimeout, HTTPStatusError, ReadTimeout, RemoteProtocolError, ConnectError
 from pathlib import Path
 from typing import Callable
 from google.cloud import compute_v1
-
 from ml_cloud_connector.MlCloudDiskOperator import MlCloudDiskOperator
 from ml_cloud_connector.MlCloudInstanceOperator import MlCloudInstanceOperator
 from ml_cloud_connector.MlCloudSnapshotOperator import MlCloudSnapshotOperator
@@ -48,7 +45,7 @@ class MlCloudConnector:
     def is_active(self):
         try:
             instance_info = self.client.get(project=self.project, zone=self.zone, instance=self.instance)
-        except BadRequest:
+        except (NotFound, BadRequest):
             self.reset_cache()
             return False
         if instance_info.status == "RUNNING":
