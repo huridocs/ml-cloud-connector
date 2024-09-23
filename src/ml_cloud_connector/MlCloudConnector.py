@@ -7,7 +7,7 @@ from requests.exceptions import ConnectionError
 from google.api_core.exceptions import GoogleAPICallError
 from googleapiclient import discovery
 from googleapiclient.errors import HttpError
-from httpx import ConnectTimeout, HTTPStatusError, ReadTimeout, RemoteProtocolError
+from httpx import ConnectTimeout, HTTPStatusError, ReadTimeout, RemoteProtocolError, ConnectError
 from pathlib import Path
 from typing import Callable
 from google.cloud import compute_v1
@@ -115,9 +115,10 @@ class MlCloudConnector:
                 bound_args.apply_defaults()
                 return_value = function(*bound_args.args, **bound_args.kwargs)
                 return return_value, True, ""
-            except ReadTimeout:
-                if request_trial_count == 5:
-                    return "There is a problem with getting the response.", False
+
+            except (ConnectError, ReadTimeout):
+                if request_trial_count == 10:
+                    return None, False, "There is a problem with getting the response."
                 service_logger.warning(f"Response timeout. Retrying... [Trial: {request_trial_count + 1}]")
                 request_trial_count += 1
 
