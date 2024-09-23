@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import tempfile
@@ -20,7 +21,7 @@ from ml_cloud_connector.configuration import PROJECT_ID, ZONE, INSTANCE_ID
 
 
 class MlCloudConnector:
-    IP_CACHE_PATH = Path(tempfile.gettempdir(), f"{INSTANCE_ID}.txt")
+    CLOUD_CACHE_PATH = Path(tempfile.gettempdir(), f"{PROJECT_ID}_cloud_cache.json")
 
     def __init__(self, service_logger=None):
         self.client = None
@@ -30,6 +31,13 @@ class MlCloudConnector:
             self.project = PROJECT_ID
             self.zone = ZONE
             self.instance = INSTANCE_ID
+            if self.CLOUD_CACHE_PATH.exists():
+                cache_content = json.loads(self.CLOUD_CACHE_PATH.read_text())
+                self.zone = cache_content["ZONE"]
+                self.instance = cache_content["INSTANCE"]
+            else:
+                self.CLOUD_CACHE_PATH.write_text(json.dumps({"ZONE": self.zone, "INSTANCE": self.instance}))
+
         if not service_logger:
             handlers = [logging.StreamHandler()]
             logging.root.handlers = []
@@ -89,20 +97,14 @@ class MlCloudConnector:
             return False
         return self.start()
 
-    def get_ip(self, port: int = 0):
-        if not self.client:
-            return "localhost"
-
-        service_running = requests.get(f"http://localhost:{port}", timeout=3).status_code == 200 if port else False
-
-        if self.IP_CACHE_PATH.exists() and service_running:
-            return self.IP_CACHE_PATH.read_text()
-
-        if self.IP_CACHE_PATH.exists() and self.is_active():
-            return self.IP_CACHE_PATH.read_text()
-
+    def get_ip(self):
         self.start_attempt_with_instance_switch()
+        cache_content_dict = json.loads(self.CLOUD_CACHE_PATH.read_text())
+        if "IP_ADDRESS" in cache_content_dict:
+            return cache_content_dict["IP_ADDRESS"]
         instance_info = self.client.get(project=self.project, zone=self.zone, instance=self.instance)
+        cache_content_dict["IP_ADDRESS"] = instance_info.network_interfaces[0].access_configs[0].nat_i_p
+        self.CLOUD_CACHE_PATH.write_text(json.dumps(cache_content_dict))
         return instance_info.network_interfaces[0].access_configs[0].nat_i_p
 
     def execute(self, function: Callable, service_logger: logging.Logger, *args, **kwargs):
@@ -200,8 +202,11 @@ class MlCloudConnector:
                 self.service_logger.info(f"Instance snapshot-{self.instance}-instance created in zone {target_zone}.")
                 self.instance = new_instance["id"]
                 self.zone = target_zone
-                os.environ["INSTANCE_ID"] = self.instance
-                os.environ["ZONE"] = self.zone
+                cache_content_dict = json.loads(self.CLOUD_CACHE_PATH.read_text())
+                cache_content_dict.pop("IP_ADDRESS")
+                cache_content_dict["ZONE"] = self.zone
+                cache_content_dict["INSTANCE"] = self.instance
+                self.CLOUD_CACHE_PATH.write_text(json.dumps(cache_content_dict))
                 return True
 
             except (GoogleAPICallError, HttpError) as err:
