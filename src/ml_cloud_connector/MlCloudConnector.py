@@ -3,8 +3,10 @@ import logging
 import tempfile
 import time
 import inspect
+from os import remove
+
 from requests.exceptions import ConnectionError
-from google.api_core.exceptions import GoogleAPICallError
+from google.api_core.exceptions import GoogleAPICallError, BadRequest
 from googleapiclient import discovery
 from googleapiclient.errors import HttpError
 from httpx import ConnectTimeout, HTTPStatusError, ReadTimeout, RemoteProtocolError, ConnectError
@@ -44,7 +46,11 @@ class MlCloudConnector:
         self.service_logger = service_logger
 
     def is_active(self):
-        instance_info = self.client.get(project=self.project, zone=self.zone, instance=self.instance)
+        try:
+            instance_info = self.client.get(project=self.project, zone=self.zone, instance=self.instance)
+        except BadRequest:
+            self.reset_cache()
+            return False
         if instance_info.status == "RUNNING":
             self.service_logger.info("Instance is active")
             return True
@@ -169,6 +175,11 @@ class MlCloudConnector:
         machine_types = compute.machineTypes().list(project=self.project, zone=zone_name).execute()
         has_machine_type = any(mt["name"] == machine_type for mt in machine_types.get("items", []))
         return has_accelerator and has_machine_type
+
+    def reset_cache(self):
+        self.zone = ZONE
+        self.instance = INSTANCE_ID
+        self.CLOUD_CACHE_PATH.write_text(json.dumps({"ZONE": self.zone, "INSTANCE": self.instance}))
 
     def switch_to_new_instance(self):
 
