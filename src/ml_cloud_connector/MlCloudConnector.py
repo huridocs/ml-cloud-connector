@@ -104,6 +104,8 @@ class MlCloudConnector:
         return True if instance_info.guest_accelerators else False
 
     def get_ip(self):
+        if not self.client:
+            return "localhost"
         self.start_attempt_with_instance_switch()
         cache_content_dict = json.loads(self.CLOUD_CACHE_PATH.read_text())
         if "IP_ADDRESS" in cache_content_dict:
