@@ -20,14 +20,17 @@ class MlCloudConnector:
     CLOUD_CACHE_PATH = Path(tempfile.gettempdir(), f"{PROJECT_ID}_cloud_cache.json")
 
     def __init__(self, server_type: str, service_logger=None, zone=None, instance=None):
-        # You should loging first with gcloud auth application-default login
-        self.client = compute_v1.InstancesClient()
+        self.client = None
         self.service_logger = service_logger
-        self.server_type = server_type
-        self.project = PROJECT_ID
-        self.zone = zone
-        self.instance = instance
-        self.initialize_connector()
+        if PROJECT_ID:
+            # You should loging first with gcloud auth application-default login
+            self.client = compute_v1.InstancesClient()
+            self.project = PROJECT_ID
+            self.server_type = server_type
+            self.zone = zone
+            self.instance = instance
+            self.initialize_connector()
+
 
     def initialize_connector(self):
         if not self.service_logger:
