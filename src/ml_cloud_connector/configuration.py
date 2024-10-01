@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from google.auth.environment_vars import GOOGLE_CLOUD_QUOTA_PROJECT
 
 load_dotenv()
 
