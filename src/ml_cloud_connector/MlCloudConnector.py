@@ -18,11 +18,11 @@ from ml_cloud_connector.configuration import PROJECT_ID
 
 
 class MlCloudConnector:
-    CLOUD_CACHE_PATH = Path(tempfile.gettempdir(), f"{PROJECT_ID}_cloud_cache.json")
 
     def __init__(self, server_type: ServerType, service_logger=None, zone=None, instance=None):
         self.client = None
         self.service_logger = service_logger
+        self.CLOUD_CACHE_PATH = self.get_cache_path(server_type)
         if PROJECT_ID:
             self.client = compute_v1.InstancesClient()
             self.project = PROJECT_ID
@@ -30,6 +30,10 @@ class MlCloudConnector:
             self.zone = zone
             self.instance = instance
             self.initialize_connector()
+
+    @staticmethod
+    def get_cache_path(server_type: ServerType):
+        return Path(tempfile.gettempdir(), f"{server_type}_cloud_cache.json")
 
     def initialize_connector(self):
         if not self.service_logger:
@@ -185,10 +189,11 @@ class MlCloudConnector:
         return True
 
     @staticmethod
-    def forget_cloud_instance():
-        if MlCloudConnector.CLOUD_CACHE_PATH.exists():
-            remove(MlCloudConnector.CLOUD_CACHE_PATH)
+    def forget_cloud_instance(server_type: ServerType):
+        cache_path = MlCloudConnector.get_cache_path(server_type)
+        if cache_path.exists():
+            remove(cache_path)
 
 
 if __name__ == "__main__":
-    MlCloudConnector.forget_cloud_instance()
+    MlCloudConnector.forget_cloud_instance(ServerType.TRANSLATION)
