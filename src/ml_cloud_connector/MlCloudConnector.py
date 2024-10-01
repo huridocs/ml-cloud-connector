@@ -165,6 +165,7 @@ class MlCloudConnector:
                 time.sleep(30)
                 reconnect_trial_count += 1
             except NotFound:
+                self.service_logger.info("Instance not found. Switching to new instance.")
                 self.forget_cloud_instance(self.server_type)
             except Exception as e:
                 raise Exception(f"Error in executing the function: {str(e)}")

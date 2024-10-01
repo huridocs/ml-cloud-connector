@@ -31,7 +31,7 @@ class MlCloudDiskOperator:
         disk_body = {
             "name": new_disk_name,
             "sourceSnapshot": f"projects/{self.project}/global/snapshots/{snapshot_name}",
-            "type": f"projects/{self.project}/zones/{target_zone}/diskTypes/pd-standard",
+            "type": f"projects/{self.project}/zones/{target_zone}/diskTypes/pd-ssd",
         }
         operation = compute.disks().insert(project=self.project, zone=target_zone, body=disk_body).execute()
         wait_for_operation(self.project, compute, operation, self.service_logger)

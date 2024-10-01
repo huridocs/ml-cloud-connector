@@ -6,7 +6,7 @@ from ml_cloud_connector.ServerType import ServerType
 
 def run():
 
-    # MlCloudConnector.forget_cloud_instance(ServerType.TRANSLATION)
+    MlCloudConnector.forget_cloud_instance(ServerType.TRANSLATION)
     ml_cloud_connector = MlCloudConnector(ServerType.TRANSLATION)
     start = time()
     print("start")
