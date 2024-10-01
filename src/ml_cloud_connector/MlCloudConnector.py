@@ -108,10 +108,13 @@ class MlCloudConnector:
     def get_ip(self):
         if not self.client:
             return "localhost"
-        self.start_attempt_with_instance_switch()
+
         cache_content_dict = json.loads(self.CLOUD_CACHE_PATH.read_text())
+
         if "IP_ADDRESS" in cache_content_dict:
             return cache_content_dict["IP_ADDRESS"]
+
+        self.start_attempt_with_instance_switch()
         instance_info = self.client.get(project=self.project, zone=self.zone, instance=self.instance)
         cache_content_dict["IP_ADDRESS"] = instance_info.network_interfaces[0].access_configs[0].nat_i_p
         self.CLOUD_CACHE_PATH.write_text(json.dumps(cache_content_dict))
