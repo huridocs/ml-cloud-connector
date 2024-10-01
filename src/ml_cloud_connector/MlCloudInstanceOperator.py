@@ -1,9 +1,12 @@
 import time
 from datetime import datetime
+import socket
+
 from google.api_core.exceptions import GoogleAPICallError
 from googleapiclient.errors import HttpError
 from ml_cloud_connector.MlCloudDiskOperator import MlCloudDiskOperator
 from ml_cloud_connector.ServerType import ServerType
+from ml_cloud_connector.configuration import GOOGLE_CLOUD_INSTANCE_CONFIGURATION
 from ml_cloud_connector.wait_for_operation import wait_for_operation
 
 
@@ -58,7 +61,7 @@ class MlCloudInstanceOperator:
     def get_google_cloud_configuration(self, new_disk_name, new_instance_name, target_zone, machine_type):
         if not new_instance_name:
             current_time = datetime.now().strftime("%Y%m%d-%H%M%S")
-            new_instance_name = f"instance-{current_time}"
+            new_instance_name = f"instance-{socket.gethostname()}-{current_time}"
 
         self.service_logger.info(f"Creating new instance: {new_instance_name} in zone {target_zone}")
         machine_type_full = f"projects/{self.project}/zones/{target_zone}/machineTypes/{machine_type}"
@@ -74,35 +77,7 @@ class MlCloudInstanceOperator:
                     "deviceName": new_disk_name,
                 }
             ],
-            "networkInterfaces": [
-                {
-                    "network": "https://www.googleapis.com/compute/v1/projects/publaynet/global/networks/default",
-                    "subnetwork": "https://www.googleapis.com/compute/v1/projects/publaynet/regions/europe-west4/subnetworks/default",
-                    "accessConfigs": [{"type": "ONE_TO_ONE_NAT", "name": "External NAT"}],
-                }
-            ],
-            "tags": {"items": ["http-server", "https-server", "ollama-server"], "fingerprint": "n79AIbZ_p0c="},
-            "metadata": {"kind": "compute#metadata", "fingerprint": "UN94vBlYHOE="},
-            "serviceAccounts": [
-                {
-                    "email": "610489196507-compute@developer.gserviceaccount.com",
-                    "scopes": [
-                        "https://www.googleapis.com/auth/devstorage.read_only",
-                        "https://www.googleapis.com/auth/logging.write",
-                        "https://www.googleapis.com/auth/monitoring.write",
-                        "https://www.googleapis.com/auth/service.management.readonly",
-                        "https://www.googleapis.com/auth/servicecontrol",
-                        "https://www.googleapis.com/auth/trace.append",
-                    ],
-                }
-            ],
-            "scheduling": {
-                "onHostMaintenance": "TERMINATE",
-                "automaticRestart": True,
-                "preemptible": False,
-                "provisioningModel": "STANDARD",
-            },
-            "labels": {},
+            **GOOGLE_CLOUD_INSTANCE_CONFIGURATION,
         }
 
     @staticmethod
@@ -145,8 +120,8 @@ class MlCloudInstanceOperator:
 
         for target_zone in target_zones:
             current_time = datetime.now().strftime("%Y%m%d-%H%M%S")
-            new_disk_name = f"{self.server_type.value}-server-disk-" + current_time
-            new_instance_name = f"{self.server_type.value}-server-instance-" + current_time
+            new_disk_name = f"{self.server_type.value}-disk-{socket.gethostname()}-{current_time}"
+            new_instance_name = f"{self.server_type.value}-instance-{socket.gethostname()}-{current_time}"
             self.service_logger.info(f"\nAttempting to create instance in zone: {target_zone}")
             disk_operator.prepare_disk(compute, target_zone, new_disk_name, snapshot_name)
             try:

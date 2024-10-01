@@ -117,7 +117,9 @@ class MlCloudConnector:
         self.CLOUD_CACHE_PATH.write_text(json.dumps(cache_content_dict))
         return instance_info.network_interfaces[0].access_configs[0].nat_i_p
 
-    def execute(self, function: Callable, service_logger: logging.Logger, *args, **kwargs) -> (object, bool, str):
+    def execute_on_cloud_server(
+        self, function: Callable, service_logger: logging.Logger, *args, **kwargs
+    ) -> (object, bool, str):
         signature = inspect.signature(function)
         connection_wait_time = 180
         reconnect_trial_count = 0
@@ -180,10 +182,10 @@ class MlCloudConnector:
         return True
 
     @staticmethod
-    def delete_cache():
+    def forget_cloud_instance():
         if MlCloudConnector.CLOUD_CACHE_PATH.exists():
             remove(MlCloudConnector.CLOUD_CACHE_PATH)
 
 
 if __name__ == "__main__":
-    MlCloudConnector.delete_cache()
+    MlCloudConnector.forget_cloud_instance()
