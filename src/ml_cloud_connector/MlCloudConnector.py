@@ -128,7 +128,7 @@ class MlCloudConnector:
         self, function: Callable, service_logger: logging.Logger, *args, **kwargs
     ) -> (object, bool, str):
         signature = inspect.signature(function)
-        connection_wait_time = 180
+        connection_wait_time = 0
         reconnect_trial_count = 0
         request_trial_count = 0
         while reconnect_trial_count < 10:
@@ -149,7 +149,7 @@ class MlCloudConnector:
                 service_logger.error(f"Connection timeout. Retrying... [Trial: {reconnect_trial_count + 1}]")
                 self.stop()
                 time.sleep(connection_wait_time)
-                connection_wait_time *= 1.5
+                connection_wait_time = connection_wait_time * 1.5 if connection_wait_time else 150
                 if connection_wait_time > 900:
                     connection_wait_time = 900
                 self.start_attempt_with_instance_switch()
