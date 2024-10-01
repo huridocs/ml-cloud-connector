@@ -5,10 +5,12 @@ from ml_cloud_connector.ServerType import ServerType
 
 
 def run():
-    start = time()
-    print("start")
+
     # MlCloudConnector.forget_cloud_instance(ServerType.TRANSLATION)
     ml_cloud_connector = MlCloudConnector(ServerType.TRANSLATION)
+    start = time()
+    print("start")
+    ml_cloud_connector.is_active()
     print("time", round(time() - start, 2), "s")
     start = time()
     print(ml_cloud_connector.get_ip())

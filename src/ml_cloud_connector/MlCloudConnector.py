@@ -23,13 +23,16 @@ class MlCloudConnector:
         self.client = None
         self.service_logger = service_logger
         self.CLOUD_CACHE_PATH = self.get_cache_path(server_type)
-        if PROJECT_ID:
-            self.client = compute_v1.InstancesClient()
-            self.project = PROJECT_ID
-            self.server_type = server_type
-            self.zone = zone
-            self.instance = instance
-            self.initialize_connector()
+
+        if not PROJECT_ID:
+            return
+
+        self.client = compute_v1.InstancesClient()
+        self.project = PROJECT_ID
+        self.server_type = server_type
+        self.zone = zone
+        self.instance = instance
+        self.initialize_connector()
 
     @staticmethod
     def get_cache_path(server_type: ServerType):
@@ -41,17 +44,21 @@ class MlCloudConnector:
             logging.root.handlers = []
             logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", handlers=handlers)
             self.service_logger = logging.getLogger()
-        if self.zone and self.instance and not self.CLOUD_CACHE_PATH.exists():
+
+        if self.zone and self.instance:
             self.CLOUD_CACHE_PATH.write_text(json.dumps({"ZONE": self.zone, "INSTANCE": self.instance}))
-        elif not (self.zone and self.instance) and self.CLOUD_CACHE_PATH.exists():
+            return
+
+        if self.CLOUD_CACHE_PATH.exists():
             cache_content = json.loads(self.CLOUD_CACHE_PATH.read_text())
             self.zone = cache_content["ZONE"]
             self.instance = cache_content["INSTANCE"]
-        else:
-            self.service_logger.info("No cache found. Creating new instance.")
-            switched = False
-            while not switched:
-                switched = self.switch_to_new_instance()
+            return
+
+        self.service_logger.info("No cache found. Creating new instance.")
+        switched = False
+        while not switched:
+            switched = self.switch_to_new_instance()
 
     def is_active(self):
         instance_info = self.client.get(project=self.project, zone=self.zone, instance=self.instance)
@@ -113,12 +120,13 @@ class MlCloudConnector:
         if not self.client:
             return "localhost"
 
+        self.start_attempt_with_instance_switch()
+
         cache_content_dict = json.loads(self.CLOUD_CACHE_PATH.read_text())
 
         if "IP_ADDRESS" in cache_content_dict:
             return cache_content_dict["IP_ADDRESS"]
 
-        self.start_attempt_with_instance_switch()
         instance_info = self.client.get(project=self.project, zone=self.zone, instance=self.instance)
         cache_content_dict["IP_ADDRESS"] = instance_info.network_interfaces[0].access_configs[0].nat_i_p
         self.CLOUD_CACHE_PATH.write_text(json.dumps(cache_content_dict))
@@ -127,13 +135,12 @@ class MlCloudConnector:
     def execute_on_cloud_server(
         self, function: Callable, service_logger: logging.Logger, *args, **kwargs
     ) -> (object, bool, str):
-        signature = inspect.signature(function)
         connection_wait_time = 0
         reconnect_trial_count = 0
         request_trial_count = 0
         while reconnect_trial_count < 10:
             try:
-                bound_args = signature.bind(*args, **kwargs)
+                bound_args = inspect.signature(function).bind(*args, **kwargs)
                 bound_args.apply_defaults()
                 return_value = function(*bound_args.args, **bound_args.kwargs)
                 return return_value, True, ""
@@ -145,8 +152,8 @@ class MlCloudConnector:
                 time.sleep(30)
                 request_trial_count += 1
 
-            except (ConnectionError, ConnectTimeout, HTTPStatusError, RemoteProtocolError, KeyError):
-                service_logger.error(f"Connection timeout. Retrying... [Trial: {reconnect_trial_count + 1}]")
+            except (ConnectionError, ConnectTimeout, HTTPStatusError, RemoteProtocolError, KeyError) as e:
+                service_logger.error(f"{str(e)} Retrying... [Trial: {reconnect_trial_count + 1}]")
                 self.stop()
                 time.sleep(connection_wait_time)
                 connection_wait_time = connection_wait_time * 1.5 if connection_wait_time else 150
