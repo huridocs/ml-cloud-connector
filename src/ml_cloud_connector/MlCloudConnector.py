@@ -4,6 +4,8 @@ import tempfile
 import time
 import inspect
 from os import remove
+
+from google.api_core.exceptions import NotFound
 from requests.exceptions import ConnectionError
 from googleapiclient import discovery
 from httpx import ConnectTimeout, HTTPStatusError, ReadTimeout, RemoteProtocolError, ConnectError
@@ -162,6 +164,8 @@ class MlCloudConnector:
                 self.start_attempt_with_instance_switch()
                 time.sleep(30)
                 reconnect_trial_count += 1
+            except NotFound:
+                self.forget_cloud_instance(self.server_type)
             except Exception as e:
                 raise Exception(f"Error in executing the function: {str(e)}")
         return None, False, "Response not returned. Server error."
