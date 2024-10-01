@@ -13,24 +13,23 @@ from google.cloud import compute_v1
 from ml_cloud_connector.MlCloudDiskOperator import MlCloudDiskOperator
 from ml_cloud_connector.MlCloudInstanceOperator import MlCloudInstanceOperator
 from ml_cloud_connector.MlCloudSnapshotOperator import MlCloudSnapshotOperator
+from ml_cloud_connector.ServerType import ServerType
 from ml_cloud_connector.configuration import PROJECT_ID
 
 
 class MlCloudConnector:
     CLOUD_CACHE_PATH = Path(tempfile.gettempdir(), f"{PROJECT_ID}_cloud_cache.json")
 
-    def __init__(self, server_type: str, service_logger=None, zone=None, instance=None):
+    def __init__(self, server_type: ServerType, service_logger=None, zone=None, instance=None):
         self.client = None
         self.service_logger = service_logger
         if PROJECT_ID:
-            # You should loging first with gcloud auth application-default login
             self.client = compute_v1.InstancesClient()
             self.project = PROJECT_ID
             self.server_type = server_type
             self.zone = zone
             self.instance = instance
             self.initialize_connector()
-
 
     def initialize_connector(self):
         if not self.service_logger:
@@ -118,7 +117,7 @@ class MlCloudConnector:
         self.CLOUD_CACHE_PATH.write_text(json.dumps(cache_content_dict))
         return instance_info.network_interfaces[0].access_configs[0].nat_i_p
 
-    def execute(self, function: Callable, service_logger: logging.Logger, *args, **kwargs):
+    def execute(self, function: Callable, service_logger: logging.Logger, *args, **kwargs) -> (object, bool, str):
         signature = inspect.signature(function)
         connection_wait_time = 180
         reconnect_trial_count = 0
@@ -187,6 +186,4 @@ class MlCloudConnector:
 
 
 if __name__ == "__main__":
-    # connector = MlCloudConnector("translation")
-    # connector.switch_to_new_instance()
     MlCloudConnector.delete_cache()

@@ -1,9 +1,11 @@
 from googleapiclient.errors import HttpError
+
+from ml_cloud_connector.ServerType import ServerType
 from ml_cloud_connector.wait_for_operation import wait_for_operation
 
 
 class MlCloudSnapshotOperator:
-    def __init__(self, project, service_logger, server_type: str):
+    def __init__(self, project, service_logger, server_type: ServerType):
         self.project = project
         self.service_logger = service_logger
         self.server_type = server_type
@@ -34,7 +36,7 @@ class MlCloudSnapshotOperator:
         wait_for_operation(self.project, compute, operation, self.service_logger)
 
     def prepare_snapshot(self, compute, zone, boot_disk_name):
-        snapshot_name = f"{self.server_type}-server-snapshot"
+        snapshot_name = f"{self.server_type.value}-server-snapshot"
         if not self.snapshot_exists(compute, snapshot_name):
             self.create_snapshot(compute, zone, boot_disk_name, snapshot_name)
         else:

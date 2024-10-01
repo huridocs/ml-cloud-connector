@@ -3,11 +3,12 @@ from datetime import datetime
 from google.api_core.exceptions import GoogleAPICallError
 from googleapiclient.errors import HttpError
 from ml_cloud_connector.MlCloudDiskOperator import MlCloudDiskOperator
+from ml_cloud_connector.ServerType import ServerType
 from ml_cloud_connector.wait_for_operation import wait_for_operation
 
 
 class MlCloudInstanceOperator:
-    def __init__(self, project, service_logger, server_type: str):
+    def __init__(self, project, service_logger, server_type: ServerType):
         self.project = project
         self.service_logger = service_logger
         self.server_type = server_type
@@ -22,13 +23,47 @@ class MlCloudInstanceOperator:
         machine_type="g2-standard-4",
         accelerator_count=1,
     ):
+        config = self.get_google_cloud_configuration(new_disk_name, new_instance_name, target_zone, machine_type)
+
+        if accelerator_type and accelerator_count > 0:
+            config["guestAccelerators"] = [
+                {
+                    "acceleratorType": f"projects/{self.project}/zones/{target_zone}/acceleratorTypes/{accelerator_type}",
+                    "acceleratorCount": accelerator_count,
+                }
+            ]
+
+        max_retries = 3
+        delay = 60
+
+        for attempt in range(max_retries):
+            try:
+                operation = compute.instances().insert(project=self.project, zone=target_zone, body=config).execute()
+                wait_for_operation(self.project, compute, operation, self.service_logger)
+                break
+
+            except GoogleAPICallError as e:
+                if attempt < max_retries - 1:
+                    self.service_logger.info(
+                        f"Resources not available. Retrying in {delay} seconds... [Trial: {attempt + 1}]"
+                    )
+                    time.sleep(delay)
+                else:
+                    self.service_logger.info(f"Max retries [{max_retries}] reached. Trying other zones...")
+                    raise
+
+        new_instance = compute.instances().get(project=self.project, zone=target_zone, instance=new_instance_name).execute()
+        return new_instance
+
+    def get_google_cloud_configuration(self, new_disk_name, new_instance_name, target_zone, machine_type):
         if not new_instance_name:
             current_time = datetime.now().strftime("%Y%m%d-%H%M%S")
             new_instance_name = f"instance-{current_time}"
 
         self.service_logger.info(f"Creating new instance: {new_instance_name} in zone {target_zone}")
         machine_type_full = f"projects/{self.project}/zones/{target_zone}/machineTypes/{machine_type}"
-        config = {
+
+        return {
             "name": new_instance_name,
             "machineType": machine_type_full,
             "disks": [
@@ -70,36 +105,6 @@ class MlCloudInstanceOperator:
             "labels": {},
         }
 
-        if accelerator_type and accelerator_count > 0:
-            config["guestAccelerators"] = [
-                {
-                    "acceleratorType": f"projects/{self.project}/zones/{target_zone}/acceleratorTypes/{accelerator_type}",
-                    "acceleratorCount": accelerator_count,
-                }
-            ]
-
-        max_retries = 3
-        delay = 60
-
-        for attempt in range(max_retries):
-            try:
-                operation = compute.instances().insert(project=self.project, zone=target_zone, body=config).execute()
-                wait_for_operation(self.project, compute, operation, self.service_logger)
-                break
-
-            except GoogleAPICallError as e:
-                if attempt < max_retries - 1:
-                    self.service_logger.info(
-                        f"Resources not available. Retrying in {delay} seconds... [Trial: {attempt + 1}]"
-                    )
-                    time.sleep(delay)
-                else:
-                    self.service_logger.info(f"Max retries [{max_retries}] reached. Trying other zones...")
-                    raise
-
-        new_instance = compute.instances().get(project=self.project, zone=target_zone, instance=new_instance_name).execute()
-        return new_instance
-
     @staticmethod
     def get_instance_configuration(compute, project, zone, instance):
         return compute.instances().get(project=project, zone=zone, instance=instance).execute()
@@ -133,15 +138,15 @@ class MlCloudInstanceOperator:
         return zones_with_accelerator
 
     def create_instance_from_snapshot(self, compute):
-        snapshot_name = f"{self.server_type}-server-snapshot"
+        snapshot_name = f"{self.server_type.value}-server-snapshot"
         disk_operator = MlCloudDiskOperator(self.project, self.service_logger)
         available_zones = self.get_zones_with_accelerator(compute)
         target_zones = [zone for zone in available_zones if zone.startswith("europe-west4")]
 
         for target_zone in target_zones:
             current_time = datetime.now().strftime("%Y%m%d-%H%M%S")
-            new_disk_name = f"{self.server_type}-server-disk-" + current_time
-            new_instance_name = f"{self.server_type}-server-instance-" + current_time
+            new_disk_name = f"{self.server_type.value}-server-disk-" + current_time
+            new_instance_name = f"{self.server_type.value}-server-instance-" + current_time
             self.service_logger.info(f"\nAttempting to create instance in zone: {target_zone}")
             disk_operator.prepare_disk(compute, target_zone, new_disk_name, snapshot_name)
             try:
