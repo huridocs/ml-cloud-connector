@@ -23,6 +23,7 @@ class MlCloudConnector:
 
     def __init__(self, server_type: ServerType, service_logger=None, zone=None, instance=None):
         self.client = None
+        self.ip_address = None
         self.service_logger = service_logger
         self.CLOUD_CACHE_PATH = self.get_cache_path(server_type)
 
@@ -124,14 +125,11 @@ class MlCloudConnector:
 
         self.start_attempt_with_instance_switch()
 
-        cache_content_dict = json.loads(self.CLOUD_CACHE_PATH.read_text())
-
-        if "IP_ADDRESS" in cache_content_dict:
-            return cache_content_dict["IP_ADDRESS"]
+        if self.ip_address:
+            return self.ip_address
 
         instance_info = self.client.get(project=self.project, zone=self.zone, instance=self.instance)
-        cache_content_dict["IP_ADDRESS"] = instance_info.network_interfaces[0].access_configs[0].nat_i_p
-        self.CLOUD_CACHE_PATH.write_text(json.dumps(cache_content_dict))
+        self.ip_address = instance_info.network_interfaces[0].access_configs[0].nat_i_p
         return instance_info.network_interfaces[0].access_configs[0].nat_i_p
 
     def execute_on_cloud_server(
@@ -147,10 +145,10 @@ class MlCloudConnector:
                 return_value = function(*bound_args.args, **bound_args.kwargs)
                 return return_value, True, ""
 
-            except (ConnectError, ReadTimeout):
+            except (ConnectError, ReadTimeout) as e:
                 if request_trial_count == 20:
                     return None, False, "There is a problem with getting the response."
-                service_logger.warning(f"Response timeout. Retrying in 30 seconds.. [Trial: {request_trial_count + 1}]")
+                service_logger.warning(f"{str(e)} Retrying in 30 seconds.. [Trial: {request_trial_count + 1}]")
                 time.sleep(30)
                 request_trial_count += 1
 
@@ -175,6 +173,7 @@ class MlCloudConnector:
         self.instance = instance_id
         self.zone = zone
         self.CLOUD_CACHE_PATH.write_text(json.dumps({"INSTANCE": instance_id, "ZONE": zone}))
+        self.ip_address = None
 
     def switch_to_new_instance(self):
         compute = discovery.build("compute", "v1")
