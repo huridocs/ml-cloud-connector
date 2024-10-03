@@ -31,7 +31,7 @@ GOOGLE_CLOUD_INSTANCE_CONFIGURATION = {
         }
     ],
     "tags": {"items": ["http-server", "https-server", "ollama-server"], "fingerprint": "n79AIbZ_p0c="},
-    "metadata": {"kind": "compute#metadata", "fingerprint": "UN94vBlYHOE="},
+    "metadata": {},
     "serviceAccounts": [
         {
             "email": "610489196507-compute@developer.gserviceaccount.com",
