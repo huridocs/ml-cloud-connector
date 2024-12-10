@@ -16,7 +16,7 @@ from ml_cloud_connector.MlCloudDiskOperator import MlCloudDiskOperator
 from ml_cloud_connector.MlCloudInstanceOperator import MlCloudInstanceOperator
 from ml_cloud_connector.MlCloudSnapshotOperator import MlCloudSnapshotOperator
 from ml_cloud_connector.ServerType import ServerType
-from ml_cloud_connector.configuration import PROJECT_ID
+from ml_cloud_connector.configuration import PROJECT_ID, LOCAL_IP
 
 
 class MlCloudConnector:
@@ -121,7 +121,7 @@ class MlCloudConnector:
 
     def get_ip(self):
         if not self.client:
-            return "localhost"
+            return LOCAL_IP
 
         self.start_attempt_with_instance_switch()
 

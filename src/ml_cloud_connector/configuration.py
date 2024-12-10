@@ -13,6 +13,7 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = CREDENTIALS_PATH
 CREDENTIALS = os.environ.get("CREDENTIALS", "")
 PROJECT_ID = os.getenv("PROJECT_ID", "")
 SERVICE_PATH = os.getenv("SERVICE_PATH", "")
+LOCAL_IP = os.getenv("LOCAL_IP", "localhost")
 
 if not os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "") and CREDENTIALS:
     google_application_credentials_path = Path("/", "tmp", "credentials.json")
