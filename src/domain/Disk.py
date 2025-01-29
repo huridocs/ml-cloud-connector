@@ -11,9 +11,9 @@ class Disk(BaseModel):
     boot: bool = False
 
     @classmethod
-    @field_validator('name')
+    @field_validator("name")
     def validate_name(cls, v: str) -> str:
-        pattern = r'^[a-z][-a-z0-9]{0,61}[a-z0-9]$'
+        pattern = r"^[a-z][-a-z0-9]{0,61}[a-z0-9]$"
         if not re.match(pattern, v):
             raise ValueError(
                 "Disk name must start with a lowercase letter, "

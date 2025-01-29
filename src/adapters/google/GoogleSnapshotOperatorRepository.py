@@ -20,7 +20,7 @@ class GoogleSnapshotOperatorRepository(SnapshotOperatorRepository):
                 disk=snapshot.source_disk,
                 snapshot_resource={
                     "name": snapshot.name,
-                }
+                },
             )
 
             operation.result()  # Wait for completion
@@ -32,10 +32,7 @@ class GoogleSnapshotOperatorRepository(SnapshotOperatorRepository):
 
     def snapshot_exists(self, snapshot_name: str) -> bool:
         try:
-            self.snapshots_client.get(
-                project=self.project_id,
-                snapshot=snapshot_name
-            )
+            self.snapshots_client.get(project=self.project_id, snapshot=snapshot_name)
             return True
 
         except Exception:
@@ -43,10 +40,7 @@ class GoogleSnapshotOperatorRepository(SnapshotOperatorRepository):
 
     def delete_snapshot(self, snapshot_name: str) -> bool:
         try:
-            operation = self.snapshots_client.delete(
-                project=self.project_id,
-                snapshot=snapshot_name
-            )
+            operation = self.snapshots_client.delete(project=self.project_id, snapshot=snapshot_name)
             operation.result()
             return True
 

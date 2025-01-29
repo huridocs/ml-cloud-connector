@@ -22,11 +22,7 @@ class GoogleDiskOperatorRepository(DiskOperatorRepository):
             else:
                 disk_resource.size_gb = 100
 
-            operation = self.disks_client.insert(
-                project=self.project_id,
-                zone=disk.zone,
-                disk_resource=disk_resource
-            )
+            operation = self.disks_client.insert(project=self.project_id, zone=disk.zone, disk_resource=disk_resource)
             operation.result()
             return True
 
@@ -36,11 +32,7 @@ class GoogleDiskOperatorRepository(DiskOperatorRepository):
 
     def delete_disk(self, zone: str, disk_name: str) -> bool:
         try:
-            operation = self.disks_client.delete(
-                project=self.project_id,
-                zone=zone,
-                disk=disk_name
-            )
+            operation = self.disks_client.delete(project=self.project_id, zone=zone, disk=disk_name)
             operation.result()
             return True
 
@@ -50,11 +42,7 @@ class GoogleDiskOperatorRepository(DiskOperatorRepository):
 
     def disk_exists(self, zone: str, disk_name: str) -> bool:
         try:
-            self.disks_client.get(
-                project=self.project_id,
-                zone=zone,
-                disk=disk_name
-            )
+            self.disks_client.get(project=self.project_id, zone=zone, disk=disk_name)
             return True
 
         except Exception:
@@ -63,15 +51,11 @@ class GoogleDiskOperatorRepository(DiskOperatorRepository):
     def get_boot_disk(self, zone: str, instance_id: str) -> str:
         try:
             instance_client = compute_v1.InstancesClient()
-            instance = instance_client.get(
-                project=self.project_id,
-                zone=zone,
-                instance=instance_id
-            )
+            instance = instance_client.get(project=self.project_id, zone=zone, instance=instance_id)
 
             for disk in instance.disks:
                 if disk.boot:
-                    return disk.source.split('/')[-1]
+                    return disk.source.split("/")[-1]
 
             raise Exception("Boot disk not found")
 

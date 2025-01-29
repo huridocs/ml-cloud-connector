@@ -1,17 +1,11 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import  Callable, Any
+from typing import Callable, Any
 
 
 class CloudProviderRepository(ABC):
     @abstractmethod
-    def execute_on_cloud_server(
-            self,
-            function: Callable,
-            logger: logging.Logger,
-            *args,
-            **kwargs
-    ) -> tuple[Any, bool, str]:
+    def execute_on_cloud_server(self, function: Callable, logger: logging.Logger, *args, **kwargs) -> tuple[Any, bool, str]:
         pass
 
     @abstractmethod

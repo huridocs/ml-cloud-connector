@@ -35,7 +35,7 @@ class GoogleCloudRepository(CloudProviderRepository):
         snapshot_operator: GoogleSnapshotOperatorRepository,
         cache_repository: GoogleCacheRepository,
         logger: Logger,
-        config: Optional[GoogleCloudConfig] = None
+        config: Optional[GoogleCloudConfig] = None,
     ):
         self.project_id = project_id
         self.server_type = server_type
@@ -54,8 +54,8 @@ class GoogleCloudRepository(CloudProviderRepository):
             instance = self.instance_operator.get_instance(zone, instance_id)
             if instance:
                 self.current_instance = instance
-            # else:
-            #     self.forget_cloud_instance()
+            else:
+                self.forget_cloud_instance()
 
     def start(self) -> bool:
         self.logger.info(f"Starting the instance...")
@@ -66,16 +66,13 @@ class GoogleCloudRepository(CloudProviderRepository):
             if self.current_instance.status == "RUNNING":
                 return True
 
-            success = self.instance_operator.start_instance(
-                self.current_instance.zone,
-                self.current_instance.id
-            )
+            success = self.instance_operator.start_instance(self.current_instance.zone, self.current_instance.id)
 
             if success:
                 self.current_instance = self.instance_operator.get_instance(
-                    self.current_instance.zone,
-                    self.current_instance.id
+                    self.current_instance.zone, self.current_instance.id
                 )
+                self.logger.info("Instance started successfully!")
                 return True
 
             return False
@@ -93,16 +90,13 @@ class GoogleCloudRepository(CloudProviderRepository):
             if self.current_instance.status != "RUNNING":
                 return True
 
-            success = self.instance_operator.stop_instance(
-                self.current_instance.zone,
-                self.current_instance.id
-            )
+            success = self.instance_operator.stop_instance(self.current_instance.zone, self.current_instance.id)
 
             if success:
                 self.current_instance = self.instance_operator.get_instance(
-                    self.current_instance.zone,
-                    self.current_instance.id
+                    self.current_instance.zone, self.current_instance.id
                 )
+                self.logger.info("Instance stopped successfully!")
                 return True
 
             return False
@@ -127,8 +121,7 @@ class GoogleCloudRepository(CloudProviderRepository):
 
             if not self.current_instance.ip_address:
                 self.current_instance = self.instance_operator.get_instance(
-                    self.current_instance.zone,
-                    self.current_instance.id
+                    self.current_instance.zone, self.current_instance.id
                 )
 
             return self.current_instance.ip_address
@@ -142,22 +135,15 @@ class GoogleCloudRepository(CloudProviderRepository):
             if not self.current_instance:
                 return False
 
-            instance = self.instance_operator.get_instance(
-                self.current_instance.zone,
-                self.current_instance.id
-            )
+            instance = self.instance_operator.get_instance(self.current_instance.zone, self.current_instance.id)
+            self.logger.info("Instance is active")
             return instance is not None and instance.status == "RUNNING"
 
         except Exception as e:
             self.logger.error(f"Failed to check instance status: {str(e)}")
             return False
 
-    def execute_on_cloud_server(
-            self,
-            function: Callable,
-            *args,
-            **kwargs
-    ) -> tuple[Any, bool, str]:
+    def execute_on_cloud_server(self, function: Callable, *args, **kwargs) -> tuple[Any, bool, str]:
 
         server_ip = self.get_ip()
         if not server_ip:
@@ -202,6 +188,7 @@ class GoogleCloudRepository(CloudProviderRepository):
             new_instance = self.create_new_instance()
             if new_instance:
                 self.update_instance_details(new_instance)
+                self.logger.info("Instance switch finished successfully!")
                 return True
             return False
         except Exception as e:
@@ -227,11 +214,7 @@ class GoogleCloudRepository(CloudProviderRepository):
                 if not disk:
                     continue
 
-                new_instance = self.instance_operator.create_instance(
-                    zone=zone,
-                    config=instance_config,
-                    disk=disk
-                )
+                new_instance = self.instance_operator.create_instance(zone=zone, config=instance_config, disk=disk)
 
                 self.logger.info(f"Successfully created instance in zone {zone}")
                 return new_instance
@@ -250,8 +233,7 @@ class GoogleCloudRepository(CloudProviderRepository):
     def get_available_zones(self) -> list[str]:
         self.logger.info(f"Getting available zones...")
         all_zones = self.instance_operator.get_available_zones(
-            accelerator_type=self.config.default_accelerator_type,
-            machine_type=self.config.default_machine_type
+            accelerator_type=self.config.default_accelerator_type, machine_type=self.config.default_machine_type
         )
 
         preferred_zones = [zone for zone in all_zones if zone.startswith("europe-west4")]
@@ -270,18 +252,14 @@ class GoogleCloudRepository(CloudProviderRepository):
             accelerator_type=self.config.default_accelerator_type,
             accelerator_count=self.config.default_accelerator_count,
             network_config=self.config.network_configuration,
-            zone=zone
+            zone=zone,
         )
 
     def create_disk(self, zone: str, snapshot_name: str, instance_config: InstanceConfig) -> Optional[Disk]:
         self.logger.info(f"Creating disk...")
         try:
             disk = Disk(
-                name=f"disk-{instance_config.name}",
-                zone=zone,
-                source_snapshot=snapshot_name,
-                type="pd-ssd",
-                boot=True
+                name=f"disk-{instance_config.name}", zone=zone, source_snapshot=snapshot_name, type="pd-ssd", boot=True
             )
 
             if self.disk_operator.create_disk(disk):
@@ -295,15 +273,9 @@ class GoogleCloudRepository(CloudProviderRepository):
         self.logger.info(f"Creating initial snapshot...")
         try:
             if self.current_instance:
-                boot_disk = self.instance_operator.get_boot_disk(
-                    self.current_instance.zone,
-                    self.current_instance.id
-                )
+                boot_disk = self.instance_operator.get_boot_disk(self.current_instance.zone, self.current_instance.id)
 
-                snapshot = Snapshot(
-                    name=f"{self.server_type.value}-server-snapshot",
-                    source_disk=boot_disk
-                )
+                snapshot = Snapshot(name=f"{self.server_type.value}-server-snapshot", source_disk=boot_disk)
 
                 return self.snapshot_operator.create_snapshot(snapshot)
             return False
@@ -321,11 +293,7 @@ class GoogleCloudRepository(CloudProviderRepository):
 
     def update_instance_details(self, instance: Instance):
         self.current_instance = instance
-        self.cache_service.update_instance_cache(
-            server_type=self.server_type,
-            instance_id=instance.id,
-            zone=instance.zone
-        )
+        self.cache_service.update_instance_cache(server_type=self.server_type, instance_id=instance.id, zone=instance.zone)
 
     def forget_cloud_instance(self):
         self.cache_service.delete_instance_cache(self.server_type)

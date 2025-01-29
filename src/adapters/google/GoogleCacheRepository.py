@@ -15,10 +15,7 @@ class GoogleCacheRepository(CacheRepository):
 
     def update_instance_cache(self, server_type: ServerType, instance_id: str, zone: str):
         cache_path = self._get_cache_path(server_type)
-        cache_data = {
-            "INSTANCE": instance_id,
-            "ZONE": zone
-        }
+        cache_data = {"INSTANCE": instance_id, "ZONE": zone}
         cache_path.write_text(json.dumps(cache_data))
 
     def get_cached_instance(self, server_type: ServerType) -> Tuple[Optional[str], Optional[str]]:

@@ -19,12 +19,8 @@ class GoogleInstanceOperatorRepository(InstanceOperatorRepository):
 
     def start_instance(self, zone: str, instance_id: str) -> bool:
         try:
-            operation = self.compute_client.start(
-                project=self.project_id,
-                zone=zone,
-                instance=instance_id
-            )
-            operation.result()  # Wait for completion
+            operation = self.compute_client.start(project=self.project_id, zone=zone, instance=instance_id)
+            operation.result()  # wait for completion
             return True
         except Exception as e:
             self.logger.error(f"Failed to start instance {instance_id}: {str(e)}")
@@ -32,12 +28,8 @@ class GoogleInstanceOperatorRepository(InstanceOperatorRepository):
 
     def stop_instance(self, zone: str, instance_id: str) -> bool:
         try:
-            operation = self.compute_client.stop(
-                project=self.project_id,
-                zone=zone,
-                instance=instance_id
-            )
-            operation.result()  # Wait for completion
+            operation = self.compute_client.stop(project=self.project_id, zone=zone, instance=instance_id)
+            operation.result()  # wait for completion
             return True
         except Exception as e:
             self.logger.error(f"Failed to stop instance {instance_id}: {str(e)}")
@@ -57,19 +49,11 @@ class GoogleInstanceOperatorRepository(InstanceOperatorRepository):
         try:
             instance_config = self.build_instance_config(zone, config, disk)
 
-            operation = self.compute.instances().insert(
-                project=self.project_id,
-                zone=zone,
-                body=instance_config
-            ).execute()
+            operation = self.compute.instances().insert(project=self.project_id, zone=zone, body=instance_config).execute()
 
             self.wait_for_operation(operation, zone)
 
-            instance_data = self.compute.instances().get(
-                project=self.project_id,
-                zone=zone,
-                instance=config.name
-            ).execute()
+            instance_data = self.compute.instances().get(project=self.project_id, zone=zone, instance=config.name).execute()
 
             return self.convert_to_instance_entity(instance_data)
 
@@ -79,11 +63,7 @@ class GoogleInstanceOperatorRepository(InstanceOperatorRepository):
 
     def get_instance(self, zone: str, instance_id: str) -> Optional[Instance]:
         try:
-            instance_data = self.compute.instances().get(
-                project=self.project_id,
-                zone=zone,
-                instance=instance_id
-            ).execute()
+            instance_data = self.compute.instances().get(project=self.project_id, zone=zone, instance=instance_id).execute()
             return self.convert_to_instance_entity(instance_data)
         except Exception as e:
             self.logger.error(f"Failed to get instance {instance_id}: {str(e)}")
@@ -91,11 +71,7 @@ class GoogleInstanceOperatorRepository(InstanceOperatorRepository):
 
     def delete_instance(self, zone: str, instance_id: str) -> bool:
         try:
-            operation = self.compute_client.delete(
-                project=self.project_id,
-                zone=zone,
-                instance=instance_id
-            )
+            operation = self.compute_client.delete(project=self.project_id, zone=zone, instance=instance_id)
             operation.result()
             return True
         except Exception as e:
@@ -112,33 +88,18 @@ class GoogleInstanceOperatorRepository(InstanceOperatorRepository):
                 zone_name = zone["name"]
                 if self.is_zone_available(zone_name, accelerator_type, machine_type):
                     available_zones.append(zone_name)
-            zones_request = self.compute.zones().list_next(
-                previous_request=zones_request,
-                previous_response=response
-            )
+            zones_request = self.compute.zones().list_next(previous_request=zones_request, previous_response=response)
 
         return available_zones
 
     def is_zone_available(self, zone_name: str, accelerator_type: str, machine_type: str) -> bool:
         try:
-            accelerator_types = self.compute.acceleratorTypes().list(
-                project=self.project_id,
-                zone=zone_name
-            ).execute()
+            accelerator_types = self.compute.acceleratorTypes().list(project=self.project_id, zone=zone_name).execute()
 
-            machine_types = self.compute.machineTypes().list(
-                project=self.project_id,
-                zone=zone_name
-            ).execute()
+            machine_types = self.compute.machineTypes().list(project=self.project_id, zone=zone_name).execute()
 
-            has_accelerator = any(
-                acc["name"] == accelerator_type
-                for acc in accelerator_types.get("items", [])
-            )
-            has_machine_type = any(
-                mt["name"] == machine_type
-                for mt in machine_types.get("items", [])
-            )
+            has_accelerator = any(acc["name"] == accelerator_type for acc in accelerator_types.get("items", []))
+            has_machine_type = any(mt["name"] == machine_type for mt in machine_types.get("items", []))
 
             return has_accelerator and has_machine_type
 
@@ -150,21 +111,25 @@ class GoogleInstanceOperatorRepository(InstanceOperatorRepository):
         instance_config = {
             "name": config.name,
             "machineType": f"projects/{self.project_id}/zones/{zone}/machineTypes/{config.machine_type}",
-            "disks": [{
-                "boot": True,
-                "autoDelete": True,
-                "source": f"projects/{self.project_id}/zones/{zone}/disks/{disk.name}",
-                "deviceName": disk.name,
-            }],
+            "disks": [
+                {
+                    "boot": True,
+                    "autoDelete": True,
+                    "source": f"projects/{self.project_id}/zones/{zone}/disks/{disk.name}",
+                    "deviceName": disk.name,
+                }
+            ],
             "networkInterfaces": config.network_config["networkInterfaces"],
             "scheduling": config.network_config["scheduling"],
         }
 
         if config.accelerator_type and config.accelerator_count > 0:
-            instance_config["guestAccelerators"] = [{
-                "acceleratorType": f"projects/{self.project_id}/zones/{zone}/acceleratorTypes/{config.accelerator_type}",
-                "acceleratorCount": config.accelerator_count,
-            }]
+            instance_config["guestAccelerators"] = [
+                {
+                    "acceleratorType": f"projects/{self.project_id}/zones/{zone}/acceleratorTypes/{config.accelerator_type}",
+                    "acceleratorCount": config.accelerator_count,
+                }
+            ]
 
         return instance_config
 
@@ -173,22 +138,20 @@ class GoogleInstanceOperatorRepository(InstanceOperatorRepository):
         return Instance(
             id=str(instance_data["id"]),
             name=instance_data["name"],
-            zone=instance_data["zone"].split('/')[-1],
-            machine_type=instance_data["machineType"].split('/')[-1],
+            zone=instance_data["zone"].split("/")[-1],
+            machine_type=instance_data["machineType"].split("/")[-1],
             status=instance_data["status"],
             ip_address=instance_data["networkInterfaces"][0]["accessConfigs"][0].get("natIP"),
-            accelerator_type=instance_data.get("guestAccelerators", [{}])[0].get("acceleratorType", "").split('/')[-1],
+            accelerator_type=instance_data.get("guestAccelerators", [{}])[0].get("acceleratorType", "").split("/")[-1],
             accelerator_count=len(instance_data.get("guestAccelerators", [])),
-            boot_disk=instance_data["disks"][0]["source"].split('/')[-1] if instance_data.get("disks") else None
+            boot_disk=instance_data["disks"][0]["source"].split("/")[-1] if instance_data.get("disks") else None,
         )
 
     def wait_for_operation(self, operation: dict, zone: str):
         while True:
-            result = self.compute.zoneOperations().get(
-                project=self.project_id,
-                zone=zone,
-                operation=operation["name"]
-            ).execute()
+            result = (
+                self.compute.zoneOperations().get(project=self.project_id, zone=zone, operation=operation["name"]).execute()
+            )
 
             if result["status"] == "DONE":
                 if "error" in result:
