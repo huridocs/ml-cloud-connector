@@ -7,6 +7,7 @@ from requests import ConnectTimeout, ReadTimeout
 from domain.RestCall import RestCall
 from ports.CloudProviderRepository import CloudProviderRepository
 
+
 class ExecuteOnCloudUseCase:
     def __init__(self, cloud_provider: CloudProviderRepository, service_logger: logging.Logger):
         self.cloud_provider = cloud_provider
