@@ -11,7 +11,7 @@ class GoogleCacheRepository(CacheRepository):
         self.cache_dir = Path(tempfile.gettempdir())
 
     def _get_cache_path(self, server_type: ServerType) -> Path:
-        return self.cache_dir / f"{server_type.value}_cloud_cache.json"
+        return Path(self.cache_dir, f"{server_type.value}_cloud_cache.json")
 
     def update_instance_cache(self, server_type: ServerType, instance_id: str, zone: str):
         cache_path = self._get_cache_path(server_type)

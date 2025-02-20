@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
 from typing import Optional
+from adapters.google.GoogleCloudConfig import GoogleCloudConfig
 from domain.Disk import Disk
 from domain.Instance import Instance
-from domain.InstanceConfig import InstanceConfig
 
 
 class InstanceOperatorRepository(ABC):
     @abstractmethod
-    def create_instance(self, zone: str, config: InstanceConfig, disk: Disk) -> Optional[Instance]:
+    def create_instance(self, instance_name: str, zone: str, config: GoogleCloudConfig, disk: Disk) -> Optional[Instance]:
         pass
 
     @abstractmethod

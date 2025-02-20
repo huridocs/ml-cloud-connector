@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod
-from domain.Disk import Disk
 
 
 class DiskOperatorRepository(ABC):
     @abstractmethod
-    def create_disk(self, disk: Disk) -> bool:
+    def create_disk(self, disk_name: str, zone: str, snapshot_name: str) -> bool:
         pass
 
     @abstractmethod

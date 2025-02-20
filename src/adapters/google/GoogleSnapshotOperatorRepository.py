@@ -47,3 +47,15 @@ class GoogleSnapshotOperatorRepository(SnapshotOperatorRepository):
         except Exception as e:
             self.logger.error(f"Failed to delete snapshot {snapshot_name}: {str(e)}")
             return False
+
+    def create_initial_snapshot(self, snapshot_name: str, current_instance, boot_disk) -> bool:
+        self.logger.info(f"Creating initial snapshot...")
+        try:
+            if current_instance:
+                snapshot = Snapshot(name=snapshot_name, source_disk=boot_disk)
+                return self.create_snapshot(snapshot)
+            return False
+        except Exception as e:
+            self.logger.error(f"Failed to create initial snapshot: {str(e)}")
+            return False
+

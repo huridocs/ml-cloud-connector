@@ -1,4 +1,6 @@
 from logging import Logger
+from typing import Optional
+
 from google.api_core.exceptions import BadRequest
 from google.cloud import compute_v1
 from domain.Disk import Disk
@@ -11,8 +13,9 @@ class GoogleDiskOperatorRepository(DiskOperatorRepository):
         self.logger = logger
         self.disks_client = compute_v1.DisksClient()
 
-    def create_disk(self, disk: Disk) -> bool:
+    def create_disk(self, disk_name: str, zone: str, snapshot_name: str) -> Optional[Disk]:
         try:
+            disk = Disk(name=disk_name, zone=zone, source_snapshot=snapshot_name, type="pd-ssd", boot=True)
             disk_resource = compute_v1.Disk()
             disk_resource.name = disk.name
             disk_resource.type = f"projects/{self.project_id}/zones/{disk.zone}/diskTypes/{disk.type}"
@@ -24,11 +27,11 @@ class GoogleDiskOperatorRepository(DiskOperatorRepository):
 
             operation = self.disks_client.insert(project=self.project_id, zone=disk.zone, disk_resource=disk_resource)
             operation.result()
-            return True
+            return disk
 
         except Exception as e:
-            self.logger.error(f"Failed to create disk {disk.name}: {str(e)}")
-            return False
+            self.logger.error(f"Failed to create disk {disk_name}: {str(e)}")
+            return None
 
     def delete_disk(self, zone: str, disk_name: str) -> bool:
         try:

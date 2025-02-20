@@ -1,12 +1,11 @@
 from logging import Logger
-from typing import List, Optional
+from typing import Optional
 from google.cloud import compute_v1
 from googleapiclient import discovery
 from google.api_core.exceptions import GoogleAPICallError
-
+from adapters.google.GoogleCloudConfig import GoogleCloudConfig
 from domain.Disk import Disk
 from domain.Instance import Instance
-from domain.InstanceConfig import InstanceConfig
 from ports.InstanceOperatorRepository import InstanceOperatorRepository
 
 
@@ -45,16 +44,12 @@ class GoogleInstanceOperatorRepository(InstanceOperatorRepository):
             self.logger.error(f"Failed to get boot disk for instance {instance_id}: {str(e)}")
             raise
 
-    def create_instance(self, zone: str, config: InstanceConfig, disk: Disk) -> Optional[Instance]:
+    def create_instance(self, name: str, zone: str, config: GoogleCloudConfig, disk: Disk) -> Optional[Instance]:
         try:
-            instance_config = self.build_instance_config(zone, config, disk)
-
+            instance_config = self.build_instance_config(name, zone, config, disk)
             operation = self.compute.instances().insert(project=self.project_id, zone=zone, body=instance_config).execute()
-
             self.wait_for_operation(operation, zone)
-
-            instance_data = self.compute.instances().get(project=self.project_id, zone=zone, instance=config.name).execute()
-
+            instance_data = self.compute.instances().get(project=self.project_id, zone=zone, instance=name).execute()
             return self.convert_to_instance_entity(instance_data)
 
         except GoogleAPICallError as e:
@@ -78,39 +73,10 @@ class GoogleInstanceOperatorRepository(InstanceOperatorRepository):
             self.logger.error(f"Failed to delete instance {instance_id}: {str(e)}")
             return False
 
-    def get_available_zones(self, accelerator_type: str, machine_type: str) -> List[str]:
-        available_zones = []
-        zones_request = self.compute.zones().list(project=self.project_id)
-
-        while zones_request is not None:
-            response = zones_request.execute()
-            for zone in response.get("items", []):
-                zone_name = zone["name"]
-                if self.is_zone_available(zone_name, accelerator_type, machine_type):
-                    available_zones.append(zone_name)
-            zones_request = self.compute.zones().list_next(previous_request=zones_request, previous_response=response)
-
-        return available_zones
-
-    def is_zone_available(self, zone_name: str, accelerator_type: str, machine_type: str) -> bool:
-        try:
-            accelerator_types = self.compute.acceleratorTypes().list(project=self.project_id, zone=zone_name).execute()
-
-            machine_types = self.compute.machineTypes().list(project=self.project_id, zone=zone_name).execute()
-
-            has_accelerator = any(acc["name"] == accelerator_type for acc in accelerator_types.get("items", []))
-            has_machine_type = any(mt["name"] == machine_type for mt in machine_types.get("items", []))
-
-            return has_accelerator and has_machine_type
-
-        except Exception as e:
-            self.logger.warning(f"Error checking zone {zone_name}: {str(e)}")
-            return False
-
-    def build_instance_config(self, zone: str, config: InstanceConfig, disk: Disk) -> dict:
+    def build_instance_config(self, name: str, zone: str, config: GoogleCloudConfig, disk: Disk) -> dict:
         instance_config = {
-            "name": config.name,
-            "machineType": f"projects/{self.project_id}/zones/{zone}/machineTypes/{config.machine_type}",
+            "name": name,
+            "machineType": f"projects/{self.project_id}/zones/{zone}/machineTypes/{config.default_machine_type}",
             "disks": [
                 {
                     "boot": True,
@@ -119,15 +85,15 @@ class GoogleInstanceOperatorRepository(InstanceOperatorRepository):
                     "deviceName": disk.name,
                 }
             ],
-            "networkInterfaces": config.network_config["networkInterfaces"],
-            "scheduling": config.network_config["scheduling"],
+            "networkInterfaces": config.network_configuration["networkInterfaces"],
+            "scheduling": config.network_configuration["scheduling"],
         }
 
-        if config.accelerator_type and config.accelerator_count > 0:
+        if config.default_accelerator_type and config.default_accelerator_count > 0:
             instance_config["guestAccelerators"] = [
                 {
-                    "acceleratorType": f"projects/{self.project_id}/zones/{zone}/acceleratorTypes/{config.accelerator_type}",
-                    "acceleratorCount": config.accelerator_count,
+                    "acceleratorType": f"projects/{self.project_id}/zones/{zone}/acceleratorTypes/{config.default_accelerator_type}",
+                    "acceleratorCount": config.default_accelerator_count,
                 }
             ]
 

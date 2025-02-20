@@ -4,6 +4,7 @@ import socket
 from logging import Logger
 from typing import Callable, Any, Optional
 from google.api_core.exceptions import NotFound, GoogleAPICallError
+from googleapiclient import discovery
 from requests.exceptions import ConnectionError
 from httpx import ConnectTimeout, HTTPStatusError, ReadTimeout
 from adapters.google import GoogleInstanceOperatorRepository
@@ -13,9 +14,7 @@ from adapters.google.GoogleDiskOperatorRepository import GoogleDiskOperatorRepos
 from adapters.google.GoogleSnapshotOperatorRepository import GoogleSnapshotOperatorRepository
 from domain.Disk import Disk
 from domain.Instance import Instance
-from domain.InstanceConfig import InstanceConfig
 from domain.ServerType import ServerType
-from domain.Snapshot import Snapshot
 from ports.CloudProviderRepository import CloudProviderRepository
 
 
@@ -145,8 +144,7 @@ class GoogleCloudRepository(CloudProviderRepository):
 
     def execute_on_cloud_server(self, function: Callable, *args, **kwargs) -> tuple[Any, bool, str]:
 
-        server_ip = self.get_ip()
-        if not server_ip:
+        if not self.get_ip():
             return None, False, "Could not get server IP"
 
         connection_wait_time = 0
@@ -205,16 +203,21 @@ class GoogleCloudRepository(CloudProviderRepository):
 
         for zone in available_zones:
             try:
-                instance_config = self.prepare_instance_config(zone)
+                current_time = datetime.now().strftime("%Y%m%d-%H%M%S")
+                hostname = socket.gethostname()
+                instance_name = f"{self.server_type.value}-instance-{hostname}-{current_time}"
                 if not self.snapshot_operator.snapshot_exists(snapshot_name):
-                    if not self.create_initial_snapshot():
+                    boot_disk = self.disk_operator.get_boot_disk(self.current_instance.zone, self.current_instance.id)
+                    if not self.snapshot_operator.create_initial_snapshot(snapshot_name, self.current_instance, boot_disk):
                         continue
 
-                disk = self.create_disk(zone, snapshot_name, instance_config)
+                self.logger.info(f"Creating disk...")
+                disk_name = f"disk-{instance_name}"
+                disk = self.disk_operator.create_disk(disk_name, zone, snapshot_name)
                 if not disk:
                     continue
 
-                new_instance = self.instance_operator.create_instance(zone=zone, config=instance_config, disk=disk)
+                new_instance = self.instance_operator.create_instance(name=instance_name, zone=zone, config=self.config, disk=disk)
 
                 self.logger.info(f"Successfully created instance in zone {zone}")
                 return new_instance
@@ -230,58 +233,39 @@ class GoogleCloudRepository(CloudProviderRepository):
 
         return None
 
+    def is_zone_available(self, compute, zone_name: str, accelerator_type: str, machine_type: str) -> bool:
+        try:
+            accelerator_types = compute.acceleratorTypes().list(project=self.project_id, zone=zone_name).execute()
+
+            machine_types = compute.machineTypes().list(project=self.project_id, zone=zone_name).execute()
+
+            has_accelerator = any(acc["name"] == accelerator_type for acc in accelerator_types.get("items", []))
+            has_machine_type = any(mt["name"] == machine_type for mt in machine_types.get("items", []))
+
+            return has_accelerator and has_machine_type
+
+        except Exception as e:
+            self.logger.warning(f"Error checking zone {zone_name}: {str(e)}")
+            return False
+
     def get_available_zones(self) -> list[str]:
         self.logger.info(f"Getting available zones...")
-        all_zones = self.instance_operator.get_available_zones(
-            accelerator_type=self.config.default_accelerator_type, machine_type=self.config.default_machine_type
-        )
+        compute = discovery.build("compute", "v1")
+        available_zones = []
+        zones_request = compute.zones().list(project=self.project_id)
 
-        preferred_zones = [zone for zone in all_zones if zone.startswith("europe-west4")]
-        other_zones = [zone for zone in all_zones if not zone.startswith("europe-west4")]
+        while zones_request is not None:
+            response = zones_request.execute()
+            for zone in response.get("items", []):
+                zone_name = zone["name"]
+                if self.is_zone_available(compute, zone_name, self.config.default_accelerator_type, self.config.default_machine_type):
+                    available_zones.append(zone_name)
+            zones_request = compute.zones().list_next(previous_request=zones_request, previous_response=response)
+
+        preferred_zones = [zone for zone in available_zones if zone.startswith("europe-west4")]
+        other_zones = [zone for zone in available_zones if not zone.startswith("europe-west4")]
 
         return preferred_zones + other_zones
-
-    def prepare_instance_config(self, zone: str) -> InstanceConfig:
-        self.logger.info(f"Preparing instance config...")
-        current_time = datetime.now().strftime("%Y%m%d-%H%M%S")
-        hostname = socket.gethostname()
-
-        return InstanceConfig(
-            name=f"{self.server_type.value}-instance-{hostname}-{current_time}",
-            machine_type=self.config.default_machine_type,
-            accelerator_type=self.config.default_accelerator_type,
-            accelerator_count=self.config.default_accelerator_count,
-            network_config=self.config.network_configuration,
-            zone=zone,
-        )
-
-    def create_disk(self, zone: str, snapshot_name: str, instance_config: InstanceConfig) -> Optional[Disk]:
-        self.logger.info(f"Creating disk...")
-        try:
-            disk = Disk(
-                name=f"disk-{instance_config.name}", zone=zone, source_snapshot=snapshot_name, type="pd-ssd", boot=True
-            )
-
-            if self.disk_operator.create_disk(disk):
-                return disk
-            return None
-        except Exception as e:
-            self.logger.error(f"Failed to create disk: {str(e)}")
-            return None
-
-    def create_initial_snapshot(self) -> bool:
-        self.logger.info(f"Creating initial snapshot...")
-        try:
-            if self.current_instance:
-                boot_disk = self.instance_operator.get_boot_disk(self.current_instance.zone, self.current_instance.id)
-
-                snapshot = Snapshot(name=f"{self.server_type.value}-server-snapshot", source_disk=boot_disk)
-
-                return self.snapshot_operator.create_snapshot(snapshot)
-            return False
-        except Exception as e:
-            self.logger.error(f"Failed to create initial snapshot: {str(e)}")
-            return False
 
     def cleanup_resources(self, zone: str, disk: Optional[Disk] = None):
         self.logger.info(f"Cleaning up resources...")
