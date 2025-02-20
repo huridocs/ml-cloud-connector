@@ -217,7 +217,9 @@ class GoogleCloudRepository(CloudProviderRepository):
                 if not disk:
                     continue
 
-                new_instance = self.instance_operator.create_instance(name=instance_name, zone=zone, config=self.config, disk=disk)
+                new_instance = self.instance_operator.create_instance(
+                    name=instance_name, zone=zone, config=self.config, disk=disk
+                )
 
                 self.logger.info(f"Successfully created instance in zone {zone}")
                 return new_instance
@@ -258,7 +260,9 @@ class GoogleCloudRepository(CloudProviderRepository):
             response = zones_request.execute()
             for zone in response.get("items", []):
                 zone_name = zone["name"]
-                if self.is_zone_available(compute, zone_name, self.config.default_accelerator_type, self.config.default_machine_type):
+                if self.is_zone_available(
+                    compute, zone_name, self.config.default_accelerator_type, self.config.default_machine_type
+                ):
                     available_zones.append(zone_name)
             zones_request = compute.zones().list_next(previous_request=zones_request, previous_response=response)
 

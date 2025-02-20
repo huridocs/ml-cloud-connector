@@ -58,4 +58,3 @@ class GoogleSnapshotOperatorRepository(SnapshotOperatorRepository):
         except Exception as e:
             self.logger.error(f"Failed to create initial snapshot: {str(e)}")
             return False
-
