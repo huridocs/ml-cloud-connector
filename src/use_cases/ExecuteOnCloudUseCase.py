@@ -1,0 +1,42 @@
+import logging
+import time
+
+from httpx import HTTPStatusError, RemoteProtocolError, ConnectError
+from requests import ConnectTimeout, ReadTimeout
+
+from domain.RestCall import RestCall
+from ports.CloudProviderRepository import CloudProviderRepository
+
+class ExecuteOnCloudUseCase:
+    def __init__(self, cloud_provider: CloudProviderRepository, service_logger: logging.Logger):
+        self.cloud_provider = cloud_provider
+        self.service_logger = service_logger
+
+    def execute(self, rest_call: RestCall) -> (any, bool, str):
+        connection_wait_time = 0
+        reconnect_trial_count = 0
+        request_trial_count = 0
+        while reconnect_trial_count < 10:
+            try:
+                result = rest_call.make_request()
+                return result.json(), True, ""
+
+            except (ConnectError, ReadTimeout) as e:
+                if request_trial_count == 20:
+                    return None, False, "There is a problem with getting the response."
+                self.service_logger.warning(f"{str(e)} Retrying in 30 seconds.. [Trial: {request_trial_count + 1}]")
+                time.sleep(30)
+                request_trial_count += 1
+
+            except (ConnectionError, ConnectTimeout, HTTPStatusError, RemoteProtocolError, KeyError) as e:
+                self.service_logger.error(f"{str(e)} Retrying... [Trial: {reconnect_trial_count + 1}]")
+                self.stop()
+                time.sleep(connection_wait_time)
+                connection_wait_time = connection_wait_time * 1.5 if connection_wait_time else 150
+                if connection_wait_time > 900:
+                    connection_wait_time = 900
+                time.sleep(30)
+                reconnect_trial_count += 1
+            except Exception as e:
+                raise Exception(f"Error in executing the function: {str(e)}")
+        return None, False, "Response not returned. Server error."
