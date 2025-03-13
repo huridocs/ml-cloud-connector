@@ -16,4 +16,4 @@ check_format:
 	. .venv/bin/activate; command black --line-length 125 . --check
 
 automatic_shutdown:
-	. .venv/bin/activate; command python src/ml_cloud_connector/automatic_shutdown_when_no_gpu_usage.py
+	. .venv/bin/activate; command python src/use_cases/AutomaticShutDownUseCase.py
