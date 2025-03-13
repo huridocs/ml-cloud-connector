@@ -4,8 +4,9 @@ import time
 
 
 class AutomaticShutDownUseCase:
-    GPU_MEMORY_THRESHOLD = 1000
-    CPU_MEMORY_THRESHOLD = 80
+    GPU_MEMORY_THRESHOLD = 10000
+    GPU_USAGE_THRESHOLD = 10
+    CPU_USAGE_THRESHOLD = 95
     INACTIVITY_TIME_THRESHOLD = 300
     CHECK_INTERVAL = 5
 
@@ -16,6 +17,15 @@ class AutomaticShutDownUseCase:
         except FileNotFoundError:
             return 0
         return sum([int(memory) for memory in output.split()])
+
+    @staticmethod
+    def get_gpu_utilization():
+        try:
+            output = subprocess.check_output(
+                ["nvidia-smi", "--query-gpu=utilization.gpu", "--format=csv,nounits,noheader"])
+            return int(output.strip())
+        except FileNotFoundError:
+            return 0
 
     @staticmethod
     def get_cpu_usage():
@@ -29,7 +39,10 @@ class AutomaticShutDownUseCase:
         if self.get_gpu_memory_usage() >= AutomaticShutDownUseCase.GPU_MEMORY_THRESHOLD:
             return True
 
-        if self.get_cpu_usage() > AutomaticShutDownUseCase.CPU_MEMORY_THRESHOLD:
+        if self.get_gpu_utilization() > AutomaticShutDownUseCase.GPU_USAGE_THRESHOLD:
+            return True
+
+        if self.get_cpu_usage() > AutomaticShutDownUseCase.CPU_USAGE_THRESHOLD:
             return True
 
         return False
