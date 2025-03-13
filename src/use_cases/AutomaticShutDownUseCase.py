@@ -12,6 +12,15 @@ class AutomaticShutDownUseCase:
     INACTIVITY_TIME_THRESHOLD = 600
     CHECK_INTERVAL = 5
 
+    def __init__(self):
+        self.logger = logging.getLogger("AutomaticShutDownUseCase")
+        self.logger.setLevel(logging.INFO)
+        formatter = logging.Formatter(fmt="%(asctime)s %(name)s.%(levelname)s: %(message)s",
+                                      datefmt="%Y.%m.%d %H:%M:%S")
+        handler = logging.StreamHandler(stream=sys.stdout)
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
+
     @staticmethod
     def get_gpu_memory_usage():
         try:
@@ -55,29 +64,19 @@ class AutomaticShutDownUseCase:
         while True:
             if self.is_vm_in_use():
                 last_usage_time = time.time()
-                print("VM is in use.")
-                # self.log_to_journal("VM is in use.")
+                self.log_to_journal("VM is in use.")
             else:
-                print("VM is NOT in use.")
-                # self.log_to_journal("VM is NOT in use.")
+                self.log_to_journal("VM is NOT in use.")
                 idle_time = int(time.time() - last_usage_time)
                 if idle_time > self.INACTIVITY_TIME_THRESHOLD:
-                    print("Inactivity threshold reached. Shutting down...")
+                    self.log_to_journal("Inactivity threshold reached. Shutting down...")
                     os.system("sudo shutdown now")
 
             time.sleep(self.CHECK_INTERVAL)
 
-    @staticmethod
-    def log_to_journal(message):
+    def log_to_journal(self, message):
         try:
-            logger = logging.getLogger(__name__)
-            logger.setLevel(logging.INFO)
-            formatter = logging.Formatter(fmt="%(asctime)s %(name)s.%(levelname)s: %(message)s",
-                                          datefmt="%Y.%m.%d %H:%M:%S")
-            handler = logging.StreamHandler(stream=sys.stdout)
-            handler.setFormatter(formatter)
-            logger.addHandler(handler)
-            logger.info(message)
+            self.logger.info(message)
         except:
             pass
 
