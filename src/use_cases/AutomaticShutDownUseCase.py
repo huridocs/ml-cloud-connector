@@ -55,8 +55,10 @@ class AutomaticShutDownUseCase:
         while True:
             if self.is_vm_in_use():
                 last_usage_time = time.time()
+                print("VM is in use.")
                 self.log_to_journal("VM is in use.")
             else:
+                print("VM is NOT in use.")
                 self.log_to_journal("VM is NOT in use.")
                 idle_time = int(time.time() - last_usage_time)
                 if idle_time > self.INACTIVITY_TIME_THRESHOLD:
