@@ -10,7 +10,7 @@ class AutomaticShutDownUseCase:
     GPU_USAGE_THRESHOLD = 10
     CPU_USAGE_THRESHOLD = 95
     INACTIVITY_TIME_THRESHOLD = 600
-    CHECK_INTERVAL = 5
+    CHECK_INTERVAL = 30
 
     def __init__(self):
         self.logger = logging.getLogger("AutomaticShutDownUseCase")
