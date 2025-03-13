@@ -1,8 +1,8 @@
+import logging
 import os
 import subprocess
+import sys
 import time
-
-import systemd.journal
 
 
 class AutomaticShutDownUseCase:
@@ -69,10 +69,16 @@ class AutomaticShutDownUseCase:
             time.sleep(self.CHECK_INTERVAL)
 
     @staticmethod
-    def log_to_journal(message, priority=systemd.journal.LOG_INFO):
+    def log_to_journal(message):
         try:
-            with systemd.journal.JournalHandler() as journal:
-                journal.send(message, PRIORITY=priority)
+            logger = logging.getLogger(__name__)
+            logger.setLevel(logging.INFO)
+            formatter = logging.Formatter(fmt="%(asctime)s %(name)s.%(levelname)s: %(message)s",
+                                          datefmt="%Y.%m.%d %H:%M:%S")
+            handler = logging.StreamHandler(stream=sys.stdout)
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+            logger.info(message)
         except:
             pass
 
