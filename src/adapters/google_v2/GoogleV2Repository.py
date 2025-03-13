@@ -46,9 +46,9 @@ class GoogleV2Repository(CloudProviderRepository):
     def get_ip(self) -> str:
         self.service_logger.info(f"Getting instance IP...")
         try:
-            instance_data = self.compute.instances().get(project=self.project_id,
-                                                         zone=self.zone,
-                                                         instance=self.instance_id).execute()
+            instance_data = (
+                self.compute.instances().get(project=self.project_id, zone=self.zone, instance=self.instance_id).execute()
+            )
             ip_address = instance_data["networkInterfaces"][0]["accessConfigs"][0].get("natIP")
 
             return ip_address
@@ -74,7 +74,8 @@ class GoogleV2Repository(CloudProviderRepository):
             return self.start()
         return False
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     server_parameters = ServerParameters(namespace="google_v2", server_type=ServerType.DOCUMENT_LAYOUT_ANALYSIS)
     google_v2_repository = GoogleV2Repository(server_parameters, logging.getLogger())
     print(google_v2_repository.start())
