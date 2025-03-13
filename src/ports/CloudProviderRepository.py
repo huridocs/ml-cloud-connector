@@ -1,23 +1,15 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Callable, Any
+from domain.ServerParameters import ServerParameters
 
 
 class CloudProviderRepository(ABC):
-    @abstractmethod
-    def execute_on_cloud_server(self, function: Callable, logger: logging.Logger, *args, **kwargs) -> tuple[Any, bool, str]:
-        pass
+    def __init__(self, server_parameters: ServerParameters, service_logger: logging.Logger):
+        self.server_parameters = server_parameters
+        self.service_logger = service_logger
 
     @abstractmethod
     def start(self) -> bool:
-        pass
-
-    @abstractmethod
-    def stop(self) -> bool:
-        pass
-
-    @abstractmethod
-    def restart(self) -> bool:
         pass
 
     @abstractmethod
@@ -25,9 +17,6 @@ class CloudProviderRepository(ABC):
         pass
 
     @abstractmethod
-    def is_active(self) -> bool:
+    def restart(self) -> bool:
         pass
 
-    @abstractmethod
-    def get_available_zones(self) -> list[str]:
-        pass

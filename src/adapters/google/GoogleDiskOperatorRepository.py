@@ -3,7 +3,7 @@ from typing import Optional
 
 from google.api_core.exceptions import BadRequest
 from google.cloud import compute_v1
-from domain.Disk import Disk
+from adapters.google.Disk import Disk
 from ports.DiskOperatorRepository import DiskOperatorRepository
 
 

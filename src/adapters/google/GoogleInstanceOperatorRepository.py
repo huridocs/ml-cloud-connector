@@ -4,8 +4,8 @@ from google.cloud import compute_v1
 from googleapiclient import discovery
 from google.api_core.exceptions import GoogleAPICallError
 from adapters.google.GoogleCloudConfig import GoogleCloudConfig
-from domain.Disk import Disk
-from domain.Instance import Instance
+from adapters.google.Disk import Disk
+from adapters.google.Instance import Instance
 from ports.InstanceOperatorRepository import InstanceOperatorRepository
 
 

@@ -1,6 +1,6 @@
 from logging import Logger
 from google.cloud import compute_v1
-from domain.Snapshot import Snapshot
+from adapters.google.Snapshot import Snapshot
 from ports.SnapshotOperatorRepository import SnapshotOperatorRepository
 
 

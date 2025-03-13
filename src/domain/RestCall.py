@@ -1,47 +1,38 @@
 import requests
 from typing import Literal, Optional, Any
 from pydantic import BaseModel
-from urllib.parse import urljoin, urlencode
+from urllib.parse import urljoin
 
 
 class RestCall(BaseModel):
     port: int
-    endpoint: str
-    parameters: list[str] = []
+    endpoint: list[str] | str
     headers: dict[str, str] = {}
     method: Literal["GET", "POST"] = "POST"
     payload: Optional[dict[str, Any]] = None
     files: Optional[dict[str, Any]] = None
     data: Optional[dict[str, Any]] = None
+    timeout: int = 30
 
     class Config:
         arbitrary_types_allowed = True
 
-    def make_request(self, ip_address: str, timeout: int = 30) -> Any:
-        url = urljoin(f"http://{ip_address}:{self.port}", self.endpoint)
+    def make_request(self, ip_address: str) -> Any:
+        url = urljoin(f"http://{ip_address}:{self.port}", "/".join(self.endpoint))
+        response = requests.request(
+            method=self.method,
+            url=url,
+            headers=self.headers,
+            json=self.payload if method != "GET" and not (self.files or self.data) else None,
+            params=None if method != "GET" else self.payload,
+            files=self.files,
+            data=self.data,
+            timeout=self.timeout,
+        )
 
-        if self.parameters:
-            params = {param.split("=")[0]: param.split("=")[1] for param in self.parameters if "=" in param}
-            url = f"{url}?{urlencode(params)}"
+        response.raise_for_status()
 
-        try:
-            response = requests.request(
-                method=self.method,
-                url=url,
-                headers=self.headers,
-                json=self.payload if method != "GET" and not (self.files or self.data) else None,
-                params=None if method != "GET" else self.payload,
-                files=self.files,
-                data=self.data,
-                timeout=timeout,
-            )
-
-            response.raise_for_status()
-
-            return response.json()
-
-        except requests.RequestException as e:
-            raise e
+        return response.json()
 
 
 if __name__ == "__main__":

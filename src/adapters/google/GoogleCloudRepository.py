@@ -12,8 +12,8 @@ from adapters.google.GoogleCacheRepository import GoogleCacheRepository
 from adapters.google.GoogleCloudConfig import GoogleCloudConfig
 from adapters.google.GoogleDiskOperatorRepository import GoogleDiskOperatorRepository
 from adapters.google.GoogleSnapshotOperatorRepository import GoogleSnapshotOperatorRepository
-from domain.Disk import Disk
-from domain.Instance import Instance
+from adapters.google.Disk import Disk
+from adapters.google.Instance import Instance
 from domain.ServerType import ServerType
 from ports.CloudProviderRepository import CloudProviderRepository
 

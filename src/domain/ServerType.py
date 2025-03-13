@@ -2,5 +2,6 @@ from enum import StrEnum
 
 
 class ServerType(StrEnum):
-    TRANSLATION = "translation"
-    METADATA_EXTRACTOR = "metadata_extractor"
+    TRANSLATIONS = "TRANSLATIONS"
+    DOCUMENT_LAYOUT_ANALYSIS = "DOCUMENT_LAYOUT_ANALYSIS"
+    METADATA_EXTRACTION = "METADATA_EXTRACTION"
