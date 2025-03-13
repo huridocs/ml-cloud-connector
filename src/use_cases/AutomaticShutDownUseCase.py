@@ -56,10 +56,10 @@ class AutomaticShutDownUseCase:
             if self.is_vm_in_use():
                 last_usage_time = time.time()
                 print("VM is in use.")
-                # self.log_to_journal("VM is in use.")
+                self.log_to_journal("VM is in use.")
             else:
                 print("VM is NOT in use.")
-                # self.log_to_journal("VM is NOT in use.")
+                self.log_to_journal("VM is NOT in use.")
                 idle_time = int(time.time() - last_usage_time)
                 if idle_time > self.INACTIVITY_TIME_THRESHOLD:
                     print("Inactivity threshold reached. Shutting down...")
@@ -70,9 +70,11 @@ class AutomaticShutDownUseCase:
 
     @staticmethod
     def log_to_journal(message, priority=systemd.journal.LOG_INFO):
-        """Logs a message to the systemd journal."""
-        with systemd.journal.JournalHandler() as journal:
-            journal.send(message, PRIORITY=priority)
+        try:
+            with systemd.journal.JournalHandler() as journal:
+                journal.send(message, PRIORITY=priority)
+        except:
+            pass
 
 if __name__ == '__main__':
     AutomaticShutDownUseCase().automatic_shutdown()
