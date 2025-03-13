@@ -71,3 +71,6 @@ class AutomaticShutDownUseCase:
         """Logs a message to the systemd journal."""
         with systemd.journal.JournalHandler() as journal:
             journal.send(message, PRIORITY=priority)
+
+if __name__ == '__main__':
+    AutomaticShutDownUseCase().automatic_shutdown()
