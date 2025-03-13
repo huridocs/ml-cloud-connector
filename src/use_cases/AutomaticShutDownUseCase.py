@@ -2,12 +2,14 @@ import os
 import subprocess
 import time
 
+import systemd.journal
+
 
 class AutomaticShutDownUseCase:
     GPU_MEMORY_THRESHOLD = 10000
     GPU_USAGE_THRESHOLD = 10
     CPU_USAGE_THRESHOLD = 95
-    INACTIVITY_TIME_THRESHOLD = 300
+    INACTIVITY_TIME_THRESHOLD = 30
     CHECK_INTERVAL = 5
 
     @staticmethod
@@ -53,11 +55,19 @@ class AutomaticShutDownUseCase:
         while True:
             if self.is_vm_in_use():
                 last_usage_time = time.time()
+                self.log_to_journal("VM is in use.")
             else:
+                self.log_to_journal("VM is NOT in use.")
                 idle_time = int(time.time() - last_usage_time)
-
                 if idle_time > self.INACTIVITY_TIME_THRESHOLD:
                     print("Inactivity threshold reached. Shutting down...")
+                    self.log_to_journal("Inactivity threshold reached. Shutting down...")
                     os.system("sudo shutdown now")
 
             time.sleep(self.CHECK_INTERVAL)
+
+    @staticmethod
+    def log_to_journal(message, priority=systemd.journal.LOG_INFO):
+        """Logs a message to the systemd journal."""
+        with systemd.journal.JournalHandler() as journal:
+            journal.send(message, PRIORITY=priority)

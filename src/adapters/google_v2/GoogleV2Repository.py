@@ -79,6 +79,3 @@ if __name__ == "__main__":
     server_parameters = ServerParameters(namespace="google_v2", server_type=ServerType.DOCUMENT_LAYOUT_ANALYSIS)
     google_v2_repository = GoogleV2Repository(server_parameters, logging.getLogger())
     print(google_v2_repository.start())
-    # print(google_v2_repository.zone)
-    # print(google_v2_repository.project_id)
-    # print(google_v2_repository.instance_id)
