@@ -5,4 +5,4 @@ from domain.ServerType import ServerType
 
 class ServerParameters(BaseModel):
     namespace: str
-    server_type : ServerType
+    server_type: ServerType

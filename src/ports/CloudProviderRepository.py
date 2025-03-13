@@ -19,4 +19,3 @@ class CloudProviderRepository(ABC):
     @abstractmethod
     def restart(self) -> bool:
         pass
-
