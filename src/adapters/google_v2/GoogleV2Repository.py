@@ -1,0 +1,70 @@
+import logging
+import os
+import time
+
+from google.cloud import compute_v1
+
+from domain.ServerParameters import ServerParameters
+from domain.ServerType import ServerType
+from ports.CloudProviderRepository import CloudProviderRepository
+
+
+class GoogleV2Repository(CloudProviderRepository):
+    def __init__(self, server_parameters: ServerParameters, service_logger: logging.Logger):
+        super().__init__(server_parameters, service_logger)
+        self.compute_client = compute_v1.InstancesClient()
+        self.project_id = os.getenv("PROJECT_ID")
+        self.zone = os.getenv("ZONE")
+        self.instance_id = os.getenv("INSTANCE_ID")
+
+    def start(self) -> bool:
+        self.service_logger.info(f"Starting the instance...")
+        try:
+            operation = self.compute_client.start(project=self.project_id, zone=self.zone, instance=self.instance_id)
+            operation.result()
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to stop instance {self.project_id}: {str(e)}")
+            return False
+
+    def get_ip(self) -> str:
+        self.service_logger.info(f"Getting instance IP...")
+        try:
+            if not self.current_instance:
+                if not self.handle_instance_switch():
+                    raise Exception("Failed to create or switch to a new instance")
+
+            if not self.current_instance.ip_address:
+                self.current_instance = self.instance_operator.get_instance(
+                    self.current_instance.zone, self.current_instance.id
+                )
+
+            return self.current_instance.ip_address
+
+        except Exception as e:
+            self.service_logger.error(f"Failed to get instance IP: {str(e)}")
+            raise
+
+    def stop(self) -> bool:
+        self.service_logger.info(f"Stopping the instance...")
+        try:
+            operation = self.compute_client.stop(project=self.project_id, zone=self.zone, instance=self.instance_id)
+            operation.result()
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to stop instance {self.project_id}: {str(e)}")
+            return False
+
+    def restart(self) -> bool:
+        self.service_logger.info(f"Restarting the instance...")
+        if self.stop():
+            time.sleep(30)
+            return self.start()
+        return False
+
+if __name__ == '__main__':
+    server_parameters = ServerParameters(namespace="google_v2", server_type=ServerType.DOCUMENT_LAYOUT_ANALYSIS)
+    google_v2_repository = GoogleV2Repository(server_parameters, logging.getLogger())
+    print(google_v2_repository.zone)
+    print(google_v2_repository.project_id)
+    print(google_v2_repository.instance_id)
