@@ -1,6 +1,7 @@
 import logging
 import time
 
+import requests
 from httpx import HTTPStatusError, RemoteProtocolError, ConnectError
 from requests import ConnectTimeout, ReadTimeout
 
@@ -30,7 +31,7 @@ class ExecuteOnCloudUseCase:
                 ip = self.cloud_provider.get_ip()
                 response = rest_call.make_request(ip)
                 return response.json(), True, ""
-            except (ConnectError, ReadTimeout) as e:
+            except (ConnectError, requests.exceptions.ConnectionError, ReadTimeout) as e:
                 if request_trial_count == 20:
                     return None, False, "There is a problem with getting the response."
                 self.service_logger.warning(f"{e} Retrying in 30 seconds.. [Trial: {request_trial_count + 1}]")
