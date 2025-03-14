@@ -36,7 +36,7 @@ class RestCall(BaseModel):
 
         response.raise_for_status()
 
-        return response.json()
+        return response
 
 
 if __name__ == "__main__":
