@@ -16,4 +16,4 @@ check_format:
 	. .venv/bin/activate; command black --line-length 125 . --check
 
 automatic_shutdown:
-	. .venv/bin/activate; command python src/ml-cloud-connector/use_cases/AutomaticShutDownUseCase.py
+	. .venv/bin/activate; command python src/ml_cloud_connector/use_cases/AutomaticShutDownUseCase.py
