@@ -31,7 +31,7 @@ class ExecuteOnCloudUseCase:
                 ip = self.cloud_provider.get_ip()
                 response = rest_call.make_request(ip)
                 return response.json(), True, ""
-            except (ConnectError, requests.exceptions.ConnectionError, requests.exceptions.HTTPError, ReadTimeout) as e:
+            except (ConnectError, requests.exceptions.ConnectionError, requests.exceptions.Timeout, ReadTimeout) as e:
                 if request_trial_count == 20:
                     return None, False, "There is a problem with getting the response."
                 self.service_logger.warning(f"{e} Retrying in 30 seconds.. [Trial: {request_trial_count + 1}]")
