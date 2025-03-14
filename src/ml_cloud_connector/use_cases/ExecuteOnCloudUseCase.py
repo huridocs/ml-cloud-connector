@@ -4,8 +4,8 @@ import time
 from httpx import HTTPStatusError, RemoteProtocolError, ConnectError
 from requests import ConnectTimeout, ReadTimeout
 
-from domain.RestCall import RestCall
-from ports.CloudProviderRepository import CloudProviderRepository
+from ml_cloud_connector.domain.RestCall import RestCall
+from ml_cloud_connector.ports.CloudProviderRepository import CloudProviderRepository
 
 
 class ExecuteOnCloudUseCase:

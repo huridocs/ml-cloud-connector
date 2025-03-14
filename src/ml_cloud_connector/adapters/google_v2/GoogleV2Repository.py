@@ -7,9 +7,9 @@ from pathlib import Path
 from google.cloud import compute_v1
 from googleapiclient import discovery
 
-from domain.ServerParameters import ServerParameters
-from domain.ServerType import ServerType
-from ports.CloudProviderRepository import CloudProviderRepository
+from ml_cloud_connector.domain.ServerParameters import ServerParameters
+from ml_cloud_connector.domain.ServerType import ServerType
+from ml_cloud_connector.ports.CloudProviderRepository import CloudProviderRepository
 
 
 class GoogleV2Repository(CloudProviderRepository):

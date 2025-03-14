@@ -1,5 +1,6 @@
 import logging
-from ports.CloudProviderRepository import CloudProviderRepository
+
+from ml_cloud_connector.ports.CloudProviderRepository import CloudProviderRepository
 
 
 class StorageCloudUseCase:

@@ -1,6 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
-from domain.ServerParameters import ServerParameters
+
+from ml_cloud_connector.domain.ServerParameters import ServerParameters
 
 
 class CloudProviderRepository(ABC):

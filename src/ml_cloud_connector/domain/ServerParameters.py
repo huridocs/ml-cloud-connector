@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from domain.ServerType import ServerType
+from ml_cloud_connector.domain.ServerType import ServerType
 
 
 class ServerParameters(BaseModel):
