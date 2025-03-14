@@ -18,7 +18,11 @@ class RestCall(BaseModel):
         arbitrary_types_allowed = True
 
     def make_request(self, ip_address: str) -> Any:
-        url = urljoin(f"http://{ip_address}:{self.port}", "/".join(self.endpoint))
+        if self.endpoint and isinstance(self.endpoint, list):
+            url = urljoin(f"http://{ip_address}:{self.port}", "/".join(self.endpoint))
+        else:
+            url = urljoin(f"http://{ip_address}:{self.port}", self.endpoint if self.endpoint else "")
+
         response = requests.request(
             method=self.method,
             url=url,
