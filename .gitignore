@@ -120,7 +120,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-src/.env
+ml-cloud-connector/.env
 .venv
 env/
 venv/
