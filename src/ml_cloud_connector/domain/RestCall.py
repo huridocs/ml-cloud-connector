@@ -37,24 +37,3 @@ class RestCall(BaseModel):
         response.raise_for_status()
 
         return response
-
-
-if __name__ == "__main__":
-    # check ollama
-    method = "POST"
-    headers = {"Content-Type": "application/json"}
-    payload = {"model": "llama3.2", "prompt": "Hello", "stream": False}
-    rest_call = RestCall(port=11434, endpoint="/api/generate", headers=headers, payload=payload, method=method)
-    response = rest_call.make_request(ip_address="localhost")
-    print("Ollama response:", response)
-
-    # check pdf-document-layout-analysis
-    pdf_path = "~/pdf-document-layout-analysis/test_pdfs/regular.pdf"
-
-    with open(pdf_path, "rb") as pdf_file:
-        files = {"file": ("pdf_name.pdf", pdf_file, "application/pdf")}
-        data = {"fast": "true"}
-
-        rest_call = RestCall(port=5060, endpoint="/", files=files, data=data)
-        response = rest_call.make_request("localhost")
-        print("PDF processing response:", response)
