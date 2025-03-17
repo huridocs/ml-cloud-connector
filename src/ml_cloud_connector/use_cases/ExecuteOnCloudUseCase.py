@@ -14,6 +14,7 @@ class ExecuteOnCloudUseCase:
     def __init__(self, cloud_provider: CloudProviderRepository, service_logger: logging.Logger):
         self.cloud_provider = cloud_provider
         self.service_logger = service_logger
+        self.ip = ""
 
     def execute(self, rest_call: RestCall) -> (Optional[Response], bool, str):
         connection_wait_time = 0
@@ -23,16 +24,18 @@ class ExecuteOnCloudUseCase:
 
         while reconnect_trial_count < 10:
             try:
-                if reconnect:
-                    self.cloud_provider.restart()
-                    time.sleep(connection_wait_time)
-                else:
-                    self.cloud_provider.start()
-
-                ip = self.cloud_provider.get_ip()
-                response = rest_call.make_request(ip)
-                return response, True, ""
-            except (ConnectError, requests.exceptions.ConnectionError, requests.exceptions.Timeout, ReadTimeout) as e:
+                try:
+                    response = rest_call.make_request(self.ip)
+                    return response, True, ""
+                except (requests.exceptions.InvalidURL, requests.exceptions.ConnectionError):
+                    if reconnect:
+                        reconnect = False
+                        self.cloud_provider.restart()
+                        time.sleep(connection_wait_time)
+                    else:
+                        self.cloud_provider.start()
+                    self.ip = self.cloud_provider.get_ip()
+            except (requests.exceptions.InvalidURL, ConnectError, requests.exceptions.ConnectionError, requests.exceptions.Timeout, ReadTimeout) as e:
                 if request_trial_count == 20:
                     return None, False, "There is a problem with getting the response."
                 self.service_logger.warning(f"{e} Retrying in 30 seconds.. [Trial: {request_trial_count + 1}]")
