@@ -51,7 +51,8 @@ class GoogleCloudStorage(StorageProviderRepository):
 
         return True
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     server_parameters = ServerParameters(namespace="google_v2", server_type=ServerType.METADATA_EXTRACTION)
     gcs = GoogleCloudStorage(server_parameters, logging.getLogger())
-    gcs.copy_from_cloud(Path('oh'), Path('/home/gabo/ssd/projects/ml-cloud-connector/data'))
+    gcs.copy_from_cloud(Path("oh"), Path("/home/gabo/ssd/projects/ml-cloud-connector/data"))

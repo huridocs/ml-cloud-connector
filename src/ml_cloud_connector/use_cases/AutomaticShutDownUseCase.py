@@ -15,8 +15,7 @@ class AutomaticShutDownUseCase:
     def __init__(self):
         self.logger = logging.getLogger("AutomaticShutDownUseCase")
         self.logger.setLevel(logging.INFO)
-        formatter = logging.Formatter(fmt="%(asctime)s %(name)s.%(levelname)s: %(message)s",
-                                      datefmt="%Y.%m.%d %H:%M:%S")
+        formatter = logging.Formatter(fmt="%(asctime)s %(name)s.%(levelname)s: %(message)s", datefmt="%Y.%m.%d %H:%M:%S")
         handler = logging.StreamHandler(stream=sys.stdout)
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
@@ -32,8 +31,7 @@ class AutomaticShutDownUseCase:
     @staticmethod
     def get_gpu_utilization():
         try:
-            output = subprocess.check_output(
-                ["nvidia-smi", "--query-gpu=utilization.gpu", "--format=csv,nounits,noheader"])
+            output = subprocess.check_output(["nvidia-smi", "--query-gpu=utilization.gpu", "--format=csv,nounits,noheader"])
             return int(output.strip())
         except FileNotFoundError:
             return 0
@@ -80,5 +78,6 @@ class AutomaticShutDownUseCase:
         except:
             pass
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     AutomaticShutDownUseCase().automatic_shutdown()
