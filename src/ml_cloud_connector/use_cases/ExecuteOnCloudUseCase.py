@@ -42,11 +42,11 @@ class ExecuteOnCloudUseCase:
             except (requests.exceptions.InvalidURL, requests.exceptions.ConnectionError, requests.exceptions.Timeout, ReadTimeout) as e:
                 if request_trial_count == 20:
                     return None, False, "There is a problem with getting the response."
-                self.service_logger.warning(f"{e} Retrying in 30 seconds.. [Trial: {request_trial_count + 1}]")
+                self.service_logger.warning(f"{e} {rest_call} Retrying in 30 seconds.. [Trial: {request_trial_count + 1}]")
                 time.sleep(30)
                 request_trial_count += 1
             except (ConnectionError, ConnectTimeout, HTTPStatusError, RemoteProtocolError, KeyError) as e:
-                self.service_logger.error(f"{e} Retrying... [Trial: {reconnect_trial_count + 1}]")
+                self.service_logger.error(f"{e} {rest_call} Retrying... [Trial: {reconnect_trial_count + 1}]")
                 connection_wait_time = connection_wait_time * 1.5 if connection_wait_time else 150
                 if connection_wait_time > 900:
                     connection_wait_time = 900
@@ -54,6 +54,6 @@ class ExecuteOnCloudUseCase:
                 reconnect = True
                 reconnect_trial_count += 1
             except Exception as e:
-                self.service_logger.error(f"{e} Server error.")
+                self.service_logger.error(f"{e} {rest_call} Server error.")
                 return None, False, "Server error." + str(e)
         return None, False, "Response not returned. Server error."

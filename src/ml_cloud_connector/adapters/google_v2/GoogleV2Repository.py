@@ -22,8 +22,7 @@ class GoogleV2Repository(CloudProviderRepository):
         self.compute_client = compute_v1.InstancesClient()
         self.compute = discovery.build("compute", "v1")
 
-    @staticmethod
-    def login():
+    def login(self):
         credentials = os.environ.get("CREDENTIALS", "")
 
         if not os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "") and credentials:
@@ -32,6 +31,7 @@ class GoogleV2Repository(CloudProviderRepository):
                 credentials = json.dumps(json.loads(credentials.strip()[1:-1]))
             google_application_credentials_path.write_text(credentials)
             os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(google_application_credentials_path)
+            # os.environ["GOOGLE_CLOUD_PROJECT"] = self.project_id
 
     def start(self) -> bool:
         self.service_logger.info(f"Starting the instance...")
@@ -80,9 +80,5 @@ if __name__ == "__main__":
     google_v2_repository = GoogleV2Repository(server_parameters, logging.getLogger())
     start = time.time()
     print("start")
-    try:
-        print(google_v2_repository.get_ip())
-    except Exception as e:
-        pass
-
+    print(google_v2_repository.get_ip())
     print("time", round(time.time() - start, 2), "s")

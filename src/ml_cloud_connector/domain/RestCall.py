@@ -12,7 +12,7 @@ class RestCall(BaseModel):
     payload: Optional[dict[str, Any]] = None
     files: Optional[dict[str, Any]] = None
     data: Optional[dict[str, Any]] = None
-    timeout: int = 30
+    timeout: int = 2000
 
     class Config:
         arbitrary_types_allowed = True
@@ -38,6 +38,5 @@ class RestCall(BaseModel):
 
         return response
 
-if __name__ == '__main__':
-    rest_call = RestCall(port=8080, endpoint="test")
-    response = rest_call.make_request("10.164.0.57")
+    def __str__(self):
+        return f"RestCall(endpoint={self.endpoint}, method={self.method})"
