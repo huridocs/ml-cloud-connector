@@ -25,6 +25,9 @@ class ExecuteOnCloudUseCase:
         while reconnect_trial_count < 10:
             try:
                 try:
+                    if not self.ip:
+                        self.cloud_provider.start()
+                        self.ip = self.cloud_provider.get_ip()
                     response = rest_call.make_request(self.ip)
                     return response, True, ""
                 except (requests.exceptions.InvalidURL, requests.exceptions.ConnectionError) as e:
@@ -36,7 +39,7 @@ class ExecuteOnCloudUseCase:
                         self.cloud_provider.start()
                     self.ip = self.cloud_provider.get_ip()
                     raise e
-            except (requests.exceptions.InvalidURL, ConnectError, requests.exceptions.ConnectionError, requests.exceptions.Timeout, ReadTimeout) as e:
+            except (requests.exceptions.InvalidURL, requests.exceptions.ConnectionError, requests.exceptions.Timeout, ReadTimeout) as e:
                 if request_trial_count == 20:
                     return None, False, "There is a problem with getting the response."
                 self.service_logger.warning(f"{e} Retrying in 30 seconds.. [Trial: {request_trial_count + 1}]")
