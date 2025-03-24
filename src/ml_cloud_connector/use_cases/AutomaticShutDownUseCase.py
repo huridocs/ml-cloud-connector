@@ -11,6 +11,7 @@ class AutomaticShutDownUseCase:
     CPU_USAGE_THRESHOLD = os.environ.get("CPU_USAGE_THRESHOLD", 95)
     INACTIVITY_TIME_THRESHOLD = os.environ.get("INACTIVITY_TIME_THRESHOLD", 600)
     CHECK_INTERVAL = os.environ.get("CHECK_INTERVAL", 30)
+    DOCKER_CONTAINER_TO_FOLLOW = os.environ.get("DOCKER_CONTAINER_TO_FOLLOW", "")
 
     def __init__(self):
         self.logger = logging.getLogger("AutomaticShutDownUseCase")
@@ -19,6 +20,19 @@ class AutomaticShutDownUseCase:
         handler = logging.StreamHandler(stream=sys.stdout)
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
+        self.container_last_log = ""
+
+    def is_docker_container_active(self):
+        if self.DOCKER_CONTAINER_TO_FOLLOW == "":
+            return False
+
+        try:
+            last_log = subprocess.check_output(["docker", "logs", "--tail", "1", self.DOCKER_CONTAINER_TO_FOLLOW]).decode()
+            if last_log != self.container_last_log:
+                self.container_last_log = last_log
+                return True
+        except:
+            return False
 
     @staticmethod
     def get_gpu_memory_usage():
@@ -45,6 +59,9 @@ class AutomaticShutDownUseCase:
         return float(output.split(b"%Cpu(s):")[1].split(b"us")[0])
 
     def is_vm_in_use(self):
+        if self.is_docker_container_active():
+            return True
+
         if self.get_gpu_memory_usage() >= AutomaticShutDownUseCase.GPU_MEMORY_THRESHOLD:
             return True
 
