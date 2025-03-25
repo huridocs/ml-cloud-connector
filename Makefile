@@ -5,7 +5,7 @@ activate:
 	. .venv/bin/activate
 
 install_venv:
-	python3 -m venv .venv
+	python -m venv .venv
 	. .venv/bin/activate; python -m pip install --upgrade pip
 	. .venv/bin/activate; python -m pip install -r requirements.txt
 
