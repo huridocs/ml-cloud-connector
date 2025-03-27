@@ -6,8 +6,6 @@ activate:
 
 install_venv:
 	python -m venv .venv
-	. .venv/bin/activate; python -m pip install --upgrade pip
-	. .venv/bin/activate; python -m pip install -r requirements.txt
 
 formatter:
 	. .venv/bin/activate; command black --line-length 125 .

@@ -6,11 +6,11 @@ import time
 
 
 class AutomaticShutDownUseCase:
-    GPU_MEMORY_THRESHOLD = os.environ.get("GPU_MEMORY_THRESHOLD", 10000)
-    GPU_USAGE_THRESHOLD = os.environ.get("GPU_USAGE_THRESHOLD", 10)
-    CPU_USAGE_THRESHOLD = os.environ.get("CPU_USAGE_THRESHOLD", 95)
-    INACTIVITY_TIME_THRESHOLD = os.environ.get("INACTIVITY_TIME_THRESHOLD", 600)
-    CHECK_INTERVAL = os.environ.get("CHECK_INTERVAL", 30)
+    GPU_MEMORY_THRESHOLD = int(os.environ.get("GPU_MEMORY_THRESHOLD", 10000))
+    GPU_USAGE_THRESHOLD = int(os.environ.get("GPU_USAGE_THRESHOLD", 10))
+    CPU_USAGE_THRESHOLD = int(os.environ.get("CPU_USAGE_THRESHOLD", 95))
+    INACTIVITY_TIME_THRESHOLD = int(os.environ.get("INACTIVITY_TIME_THRESHOLD", 600))
+    CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", 30))
     DOCKER_CONTAINER_TO_FOLLOW = os.environ.get("DOCKER_CONTAINER_TO_FOLLOW", "")
 
     def __init__(self):
