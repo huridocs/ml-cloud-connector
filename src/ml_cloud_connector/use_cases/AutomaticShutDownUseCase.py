@@ -86,7 +86,7 @@ class AutomaticShutDownUseCase:
                 idle_time = int(time.time() - last_usage_time)
                 if idle_time > self.INACTIVITY_TIME_THRESHOLD:
                     self.log_to_journal("Inactivity threshold reached. Shutting down...")
-                    os.system("shutdown now")
+                    os.system("sudo shutdown now")
 
             time.sleep(self.CHECK_INTERVAL)
 
