@@ -1,6 +1,6 @@
 [project]
 name = "ml-cloud-connector"
-version = "2025.03.25.01"
+version = "2025.03.27.01"
 description = "This tool is a ml cloud connector"
 license = { file = "LICENSE" }
 authors = [{ name = "HURIDOCS" }]
@@ -14,7 +14,8 @@ dependencies = [
     "pydantic==2.10.6",
     "setuptools==75.4.0",
     "requests==2.32.3",
-    "protobuf==5.27.3"
+    "protobuf==5.27.3",
+    "google-cloud-storage==3.1.0"
 ]
 
 [project.urls]
