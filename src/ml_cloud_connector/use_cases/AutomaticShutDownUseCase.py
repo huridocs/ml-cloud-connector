@@ -23,13 +23,12 @@ class AutomaticShutDownUseCase:
         self.container_last_log = ""
 
     def is_docker_container_active(self):
-        print(f"Checking if docker container {self.DOCKER_CONTAINER_TO_FOLLOW} is active")
         if self.DOCKER_CONTAINER_TO_FOLLOW == "":
             return False
 
         try:
-            last_log = subprocess.check_output(["docker", "logs", "--tail", "1", self.DOCKER_CONTAINER_TO_FOLLOW]).decode()
-            print(f"Last log: {last_log}")
+            command = ["docker", "logs", "--tail", "1", self.DOCKER_CONTAINER_TO_FOLLOW]
+            last_log = subprocess.check_output(command, stderr=subprocess.STDOUT).decode()
             if last_log != self.container_last_log:
                 self.container_last_log = last_log
                 return True
