@@ -63,7 +63,7 @@ class AutomaticShutDownUseCase:
 
     def is_vm_in_use(self) -> tuple[bool, str]:
         if self.is_docker_container_active():
-            return True, f"Docker container is active, last log: {self.container_last_log}"
+            return True, f"Docker container is active, last log: {self.container_last_log[:35]}..."
 
         if self.get_gpu_memory_usage() >= AutomaticShutDownUseCase.GPU_MEMORY_THRESHOLD:
             return True, f"GPU memory usage is above threshold {self.get_gpu_memory_usage()}"
@@ -85,8 +85,11 @@ class AutomaticShutDownUseCase:
                 last_usage_time = time.time()
                 self.log_to_journal(f"VM is in use. Reason: {reason}")
             else:
-                self.log_to_journal("VM is NOT in use.")
                 idle_time = int(time.time() - last_usage_time)
+                time_to_shutdown = self.INACTIVITY_TIME_THRESHOLD - idle_time
+                self.log_to_journal(
+                    f"VM is NOT in use. Idle time: {idle_time} seconds. Time to shutdown: {time_to_shutdown} seconds."
+                )
                 if idle_time > self.INACTIVITY_TIME_THRESHOLD:
                     self.log_to_journal("Inactivity threshold reached. Shutting down...")
                     os.system("sudo shutdown now")
