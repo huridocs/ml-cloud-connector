@@ -76,9 +76,9 @@ class GoogleV2Repository(CloudProviderRepository):
 
 
 if __name__ == "__main__":
-    server_parameters = ServerParameters(namespace="google_v2", server_type=ServerType.DOCUMENT_LAYOUT_ANALYSIS)
+    server_parameters = ServerParameters(namespace="google_v2", server_type=ServerType.METADATA_EXTRACTION)
     google_v2_repository = GoogleV2Repository(server_parameters, logging.getLogger())
     start = time.time()
     print("start")
-    print(google_v2_repository.get_ip())
+    print(google_v2_repository.stop())
     print("time", round(time.time() - start, 2), "s")
