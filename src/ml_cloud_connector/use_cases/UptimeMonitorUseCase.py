@@ -3,7 +3,7 @@ import logging.handlers
 import os
 import subprocess
 import time
-import graypy
+from ml_cloud_connector.use_cases.GraylogLoggerUseCase import GraylogLoggerUseCase
 
 
 class UptimeMonitorUseCase:
@@ -11,13 +11,17 @@ class UptimeMonitorUseCase:
     GRAYLOG_PORT = os.environ.get("GRAYLOG_PORT", "12201")
     UPTIME_THRESHOLD_HOURS = int(os.environ.get("UPTIME_THRESHOLD_HOURS", 20))
     CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", 300))
-    ALERT_FLAG_FILE = "/tmp/uptime_alert_sent_python"
+    SOURCE = os.environ.get("SOURCE", "pdf_metadata_extraction")
 
     def __init__(self):
         self.journal_logger = self._setup_journal_logger()
-        self.graylog_logger = self._setup_graylog_logger()
+        self.graylog_logger = GraylogLoggerUseCase()
+        self.threshold_exceeded = False
+        self.last_alert_hour = None
+        self.initial_alert_sent = False
 
-    def _setup_journal_logger(self):
+    @staticmethod
+    def _setup_journal_logger():
         logger = logging.getLogger("UptimeMonitor_Journal")
         logger.setLevel(logging.INFO)
 
@@ -30,26 +34,6 @@ class UptimeMonitorUseCase:
                 console_handler = logging.StreamHandler()
                 console_handler.setFormatter(logging.Formatter("%(asctime)s - UptimeMonitor: %(message)s"))
                 logger.addHandler(console_handler)
-        return logger
-
-    def _setup_graylog_logger(self):
-        logger = logging.getLogger("UptimeMonitor_Graylog")
-        logger.setLevel(logging.INFO)
-
-        if not logger.handlers:
-            try:
-                graylog_handler = graypy.GELFUDPHandler(self.GRAYLOG_HOST, int(self.GRAYLOG_PORT))
-                logger.addHandler(graylog_handler)
-                logger.info(
-                    "Graylog logger initialized",
-                    extra={
-                        "component": "uptime_monitor",
-                        "source_ip": self.get_ip_address(),
-                        "hostname": self.get_hostname(),
-                    },
-                )
-            except Exception as e:
-                self.journal_logger.error(f"Failed to setup Graylog logger: {e}")
         return logger
 
     @staticmethod
@@ -66,14 +50,6 @@ class UptimeMonitorUseCase:
             return 0
 
     @staticmethod
-    def get_hostname():
-        try:
-            return subprocess.check_output(["hostname"]).decode().strip()
-        except Exception as e:
-            logging.error(f"Error getting hostname: {e}")
-            return "unknown_host"
-
-    @staticmethod
     def get_ip_address():
         try:
             return subprocess.check_output(["hostname", "-I"]).decode().split()[0].strip()
@@ -82,27 +58,15 @@ class UptimeMonitorUseCase:
             return "unknown_ip"
 
     def send_gelf_message(self, short_message, full_message, level=3, custom_fields=None):
+        """Send GELF message to Graylog using GraylogLoggerUseCase"""
         if custom_fields is None:
             custom_fields = {}
-
-        log_level = logging.ERROR if level <= 3 else logging.INFO
-
-        extra_fields = {
-            "alert_source": "uptime_monitor_python",
-            "source_ip": self.get_ip_address(),
-            "hostname": self.get_hostname(),
-            "full_message": full_message,
-            **custom_fields,
-        }
-
+        level_str = "ERROR" if level <= 3 else "INFO"
         try:
-            if log_level == logging.ERROR:
-                self.graylog_logger.error(short_message, extra=extra_fields)
-            else:
-                self.graylog_logger.info(short_message, extra=extra_fields)
-
+            self.graylog_logger.send_log(
+                short_message, full_message, level=level_str, facility="uptime_monitor_python", **custom_fields
+            )
             self.journal_logger.info(f"Successfully sent GELF message to Graylog: {short_message}")
-
         except Exception as e:
             self.journal_logger.error(f"Failed to send GELF message to Graylog: {e}")
 
@@ -113,21 +77,40 @@ class UptimeMonitorUseCase:
         while True:
             current_uptime_minutes = self.get_system_uptime_minutes()
             current_uptime_hours = int(current_uptime_minutes / 60)
-            hostname = self.get_hostname()
 
             self.log_to_journal(
-                f"[{hostname}] Current uptime: {current_uptime_hours} hours ({current_uptime_minutes} minutes)"
+                f"[UptimeMonitorUseCase] Current uptime: {current_uptime_hours} hours ({current_uptime_minutes} minutes)"
             )
 
             if current_uptime_minutes > uptime_threshold_minutes:
-                if not os.path.exists(self.ALERT_FLAG_FILE):
-                    self.log_to_journal(f"[{hostname}] Uptime threshold exceeded! Sending alert to Graylog.")
+                should_send_alert = False
 
-                    short_msg = f"System uptime exceeded {self.UPTIME_THRESHOLD_HOURS} hours on {hostname}"
+                if not self.initial_alert_sent:
+                    self.log_to_journal(
+                        f"[UptimeMonitorUseCase] Uptime threshold exceeded! Sending initial alert to Graylog."
+                    )
+                    should_send_alert = True
+                    self.initial_alert_sent = True
+                    self.threshold_exceeded = True
+                    self.last_alert_hour = current_uptime_hours
+                else:
+                    if self.last_alert_hour is None or current_uptime_hours >= self.last_alert_hour + 1:
+                        self.log_to_journal(
+                            f"[UptimeMonitorUseCase] One hour passed since last alert. Sending hourly alert to Graylog."
+                        )
+                        should_send_alert = True
+                        self.last_alert_hour = current_uptime_hours
+                    else:
+                        self.log_to_journal(
+                            f"[UptimeMonitorUseCase] Uptime threshold exceeded, but hourly alert not due yet."
+                        )
+
+                if should_send_alert:
+                    short_msg = f"System uptime exceeded {self.UPTIME_THRESHOLD_HOURS} hours on UptimeMonitorUseCase"
                     full_msg = (
-                        f"The system '{hostname}' (IP: {self.get_ip_address()}) has been running for "
+                        f"The system 'UptimeMonitorUseCase' (IP: {self.get_ip_address()}) has been running for "
                         f"{current_uptime_hours} hours, which is above the {self.UPTIME_THRESHOLD_HOURS}-hour threshold. "
-                        "Please investigate. This alert was triggered by the 'uptime_monitor_python.service' on the system."
+                        f"Please investigate. This alert was triggered by the 'uptime_monitor_python.service' on the system."
                     )
 
                     custom_fields = {
@@ -135,30 +118,18 @@ class UptimeMonitorUseCase:
                         "uptime_minutes": current_uptime_minutes,
                         "ip_address": self.get_ip_address(),
                         "alert_type": "uptime_threshold_exceeded",
+                        "threshold_hours": self.UPTIME_THRESHOLD_HOURS,
                     }
 
                     self.send_gelf_message(short_msg, full_msg, level=3, custom_fields=custom_fields)
-
-                    try:
-                        with open(self.ALERT_FLAG_FILE, "w") as f:
-                            f.write(str(current_uptime_minutes))
-                        self.log_to_journal(f"[{hostname}] Created alert flag file: {self.ALERT_FLAG_FILE}")
-                    except IOError as e:
-                        self.log_to_journal(f"[{hostname}] Error creating alert flag file: {e}")
-                else:
-                    self.log_to_journal(
-                        f"[{hostname}] Uptime threshold exceeded, but alert already sent for this uptime period. Skipping."
-                    )
             else:
-                self.log_to_journal(f"[{hostname}] Uptime is below threshold. No alert needed.")
-                if os.path.exists(self.ALERT_FLAG_FILE):
-                    try:
-                        os.remove(self.ALERT_FLAG_FILE)
-                        self.log_to_journal(
-                            f"[{hostname}] Removed alert flag file: {self.ALERT_FLAG_FILE} as uptime is now below threshold."
-                        )
-                    except OSError as e:
-                        self.log_to_journal(f"[{hostname}] Error removing alert flag file: {e}")
+                if self.threshold_exceeded:
+                    self.log_to_journal(f"[UptimeMonitorUseCase] Uptime is now below threshold. Resetting alert state.")
+                    self.threshold_exceeded = False
+                    self.initial_alert_sent = False
+                    self.last_alert_hour = None
+                else:
+                    self.log_to_journal(f"[UptimeMonitorUseCase] Uptime is below threshold. No alert needed.")
 
             time.sleep(self.CHECK_INTERVAL)
 
