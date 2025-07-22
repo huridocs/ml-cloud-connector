@@ -1,7 +1,6 @@
 import logging
 import logging.handlers
 import os
-import subprocess
 import time
 from ml_cloud_connector.use_cases.GraylogLoggerUseCase import GraylogLoggerUseCase
 
@@ -9,7 +8,7 @@ from ml_cloud_connector.use_cases.GraylogLoggerUseCase import GraylogLoggerUseCa
 class UptimeMonitorUseCase:
     GRAYLOG_HOST = os.environ.get("GRAYLOG_HOST", "your_graylog_server_ip_or_hostname")
     GRAYLOG_PORT = os.environ.get("GRAYLOG_PORT", "12201")
-    UPTIME_THRESHOLD_HOURS = int(os.environ.get("UPTIME_THRESHOLD_HOURS", 20))
+    UPTIME_THRESHOLD_HOURS = int(os.environ.get("UPTIME_THRESHOLD_HOURS", 15))
     CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", 300))
     SOURCE = os.environ.get("SOURCE", "pdf_metadata_extraction")
 
@@ -48,14 +47,6 @@ class UptimeMonitorUseCase:
         except Exception as e:
             logging.error(f"Error reading system uptime: {e}")
             return 0
-
-    @staticmethod
-    def get_ip_address():
-        try:
-            return subprocess.check_output(["hostname", "-I"]).decode().split()[0].strip()
-        except Exception as e:
-            logging.error(f"Error getting IP address: {e}")
-            return "unknown_ip"
 
     def send_gelf_message(self, short_message, full_message, level=3, custom_fields=None):
         """Send GELF message to Graylog using GraylogLoggerUseCase"""
@@ -106,9 +97,9 @@ class UptimeMonitorUseCase:
                         )
 
                 if should_send_alert:
-                    short_msg = f"System uptime exceeded {self.UPTIME_THRESHOLD_HOURS} hours on UptimeMonitorUseCase"
+                    short_msg = f"System uptime exceeded {self.UPTIME_THRESHOLD_HOURS} hours"
                     full_msg = (
-                        f"The system 'UptimeMonitorUseCase' (IP: {self.get_ip_address()}) has been running for "
+                        f"The system 'UptimeMonitorUseCase' has been running for "
                         f"{current_uptime_hours} hours, which is above the {self.UPTIME_THRESHOLD_HOURS}-hour threshold. "
                         f"Please investigate. This alert was triggered by the 'uptime_monitor_python.service' on the system."
                     )
@@ -116,7 +107,6 @@ class UptimeMonitorUseCase:
                     custom_fields = {
                         "uptime_hours": current_uptime_hours,
                         "uptime_minutes": current_uptime_minutes,
-                        "ip_address": self.get_ip_address(),
                         "alert_type": "uptime_threshold_exceeded",
                         "threshold_hours": self.UPTIME_THRESHOLD_HOURS,
                     }

@@ -9,16 +9,11 @@ class GraylogLoggerUseCase:
     GRAYLOG_HOST = os.environ.get("GRAYLOG_HOST", "setup_ip")
     GRAYLOG_PORT = int(os.environ.get("GRAYLOG_PORT", "12201"))
     SOURCE = os.environ.get("GRAYLOG_SOURCE", "pdf_metadata_extraction")
-
-    # Syslog severity levels mapping
-    # 0: Emergency, 1: Alert, 2: Critical, 3: Error, 4: Warning, 5: Notice, 6: Informational, 7: Debug
     LOG_LEVELS = {"DEBUG": 7, "INFO": 6, "NOTICE": 5, "WARNING": 4, "ERROR": 3, "CRITICAL": 2, "ALERT": 1, "EMERGENCY": 0}
 
     def __init__(self, graylog_host=None, graylog_port=None):
         self.graylog_host = graylog_host if graylog_host else self.GRAYLOG_HOST
         self.graylog_port = graylog_port if graylog_port else self.GRAYLOG_PORT
-
-        self.graylog_url = f"http://{self.graylog_host}:{self.graylog_port}/gelf"
         self.source = self.SOURCE
         self.ip_address = self._get_local_ip()
 
@@ -52,6 +47,7 @@ class GraylogLoggerUseCase:
             "timestamp": time.time(),  # Current Unix timestamp
             "level": gelf_level,
             "facility": facility,
+            "ip": self.ip_address,
         }
 
         # Add custom fields from kwargs, ensuring they are prefixed with '_'
@@ -101,15 +97,13 @@ class GraylogLoggerUseCase:
 
 
 if __name__ == "__main__":
-    # Example usage
     graylog_logger = GraylogLoggerUseCase()
 
-    # Sending a test log message
     graylog_logger.send_log(
         short_message="Test log message",
         full_message="This is a detailed message for testing purposes.",
         level="INFO",
-        facility="test_script",
+        facility="test_application",
         custom_field1="value1",
         custom_field2="value2",
     )
