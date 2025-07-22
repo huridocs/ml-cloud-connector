@@ -1,4 +1,5 @@
 import logging
+import logging.handlers
 import os
 import subprocess
 import time
@@ -16,6 +17,16 @@ class UptimeMonitorUseCase:
     def __init__(self):
         self.logger = logging.getLogger("UptimeMonitorUseCase")
         self.logger.setLevel(logging.INFO)
+
+        if not self.logger.handlers:
+            try:
+                journal_handler = logging.handlers.SysLogHandler(address="/dev/log")
+                journal_handler.setFormatter(logging.Formatter("UptimeMonitor: %(message)s"))
+                self.logger.addHandler(journal_handler)
+            except Exception:
+                console_handler = logging.StreamHandler()
+                console_handler.setFormatter(logging.Formatter("%(asctime)s - UptimeMonitor: %(message)s"))
+                self.logger.addHandler(console_handler)
 
     @staticmethod
     def get_system_uptime_minutes():
