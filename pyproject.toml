@@ -15,7 +15,8 @@ dependencies = [
     "setuptools==75.4.0",
     "requests==2.32.3",
     "protobuf==6.31.0",
-    "google-cloud-storage==3.1.0"
+    "google-cloud-storage==3.1.0",
+    "graypy==2.1.0"
 ]
 
 [project.urls]

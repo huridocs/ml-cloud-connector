@@ -3,30 +3,54 @@ import logging.handlers
 import os
 import subprocess
 import time
-import json
-import requests
+import graypy
 
 
 class UptimeMonitorUseCase:
     GRAYLOG_HOST = os.environ.get("GRAYLOG_HOST", "your_graylog_server_ip_or_hostname")
-    GRAYLOG_PORT = os.environ.get("GRAYLOG_PORT", "12202")
+    GRAYLOG_PORT = os.environ.get("GRAYLOG_PORT", "12201")
     UPTIME_THRESHOLD_HOURS = int(os.environ.get("UPTIME_THRESHOLD_HOURS", 20))
     CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", 300))
     ALERT_FLAG_FILE = "/tmp/uptime_alert_sent_python"
 
     def __init__(self):
-        self.logger = logging.getLogger("UptimeMonitorUseCase")
-        self.logger.setLevel(logging.INFO)
+        self.journal_logger = self._setup_journal_logger()
+        self.graylog_logger = self._setup_graylog_logger()
 
-        if not self.logger.handlers:
+    def _setup_journal_logger(self):
+        logger = logging.getLogger("UptimeMonitor_Journal")
+        logger.setLevel(logging.INFO)
+
+        if not logger.handlers:
             try:
                 journal_handler = logging.handlers.SysLogHandler(address="/dev/log")
                 journal_handler.setFormatter(logging.Formatter("UptimeMonitor: %(message)s"))
-                self.logger.addHandler(journal_handler)
+                logger.addHandler(journal_handler)
             except Exception:
                 console_handler = logging.StreamHandler()
                 console_handler.setFormatter(logging.Formatter("%(asctime)s - UptimeMonitor: %(message)s"))
-                self.logger.addHandler(console_handler)
+                logger.addHandler(console_handler)
+        return logger
+
+    def _setup_graylog_logger(self):
+        logger = logging.getLogger("UptimeMonitor_Graylog")
+        logger.setLevel(logging.INFO)
+
+        if not logger.handlers:
+            try:
+                graylog_handler = graypy.GELFUDPHandler(self.GRAYLOG_HOST, int(self.GRAYLOG_PORT))
+                logger.addHandler(graylog_handler)
+                logger.info(
+                    "Graylog logger initialized",
+                    extra={
+                        "component": "uptime_monitor",
+                        "source_ip": self.get_ip_address(),
+                        "hostname": self.get_hostname(),
+                    },
+                )
+            except Exception as e:
+                self.journal_logger.error(f"Failed to setup Graylog logger: {e}")
+        return logger
 
     @staticmethod
     def get_system_uptime_minutes():
@@ -61,39 +85,26 @@ class UptimeMonitorUseCase:
         if custom_fields is None:
             custom_fields = {}
 
-        gelf_payload = {
-            "version": "1.1",
-            "host": self.get_hostname(),
-            "short_message": short_message,
+        log_level = logging.ERROR if level <= 3 else logging.INFO
+
+        extra_fields = {
+            "alert_source": "uptime_monitor_python",
+            "source_ip": self.get_ip_address(),
+            "hostname": self.get_hostname(),
             "full_message": full_message,
-            "timestamp": time.time(),
-            "level": level,
-            "_source_ip": self.get_ip_address(),
-            "_alert_source": "uptime_monitor_python",
+            **custom_fields,
         }
 
-        for key, value in custom_fields.items():
-            gelf_payload[f"_{key}"] = value
-
         try:
-            response = requests.post(
-                f"http://{self.GRAYLOG_HOST}:{self.GRAYLOG_PORT}/gelf",
-                data=json.dumps(gelf_payload),
-                headers={"Content-Type": "application/json", "Accept": "application/json"},
-                timeout=10,
-            )
-
-            if response.status_code == 202:
-                self.logger.info(f"Successfully sent GELF message to Graylog: {short_message}")
+            if log_level == logging.ERROR:
+                self.graylog_logger.error(short_message, extra=extra_fields)
             else:
-                self.logger.error(
-                    f"Failed to send GELF message to Graylog. Status code: {response.status_code}, Response: {response.text}"
-                )
+                self.graylog_logger.info(short_message, extra=extra_fields)
 
-        except requests.exceptions.RequestException as e:
-            self.logger.error(f"Network error while sending GELF message to Graylog: {e}")
+            self.journal_logger.info(f"Successfully sent GELF message to Graylog: {short_message}")
+
         except Exception as e:
-            self.logger.error(f"An unexpected error occurred while sending GELF message: {e}")
+            self.journal_logger.error(f"Failed to send GELF message to Graylog: {e}")
 
     def monitor_uptime(self):
         self.log_to_journal("Starting Uptime Monitor Service...")
@@ -154,17 +165,17 @@ class UptimeMonitorUseCase:
     def log_to_journal(self, message, level=logging.INFO):
         try:
             if level == logging.DEBUG:
-                self.logger.debug(message)
+                self.journal_logger.debug(message)
             elif level == logging.INFO:
-                self.logger.info(message)
+                self.journal_logger.info(message)
             elif level == logging.WARNING:
-                self.logger.warning(message)
+                self.journal_logger.warning(message)
             elif level == logging.ERROR:
-                self.logger.error(message)
+                self.journal_logger.error(message)
             elif level == logging.CRITICAL:
-                self.logger.critical(message)
+                self.journal_logger.critical(message)
             else:
-                self.logger.info(message)
+                self.journal_logger.info(message)
         except Exception as e:
             print(f"Logging error: {e} - Original message: {message}")
 
