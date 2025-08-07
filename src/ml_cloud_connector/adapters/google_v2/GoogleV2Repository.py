@@ -33,14 +33,28 @@ class GoogleV2Repository(CloudProviderRepository):
             os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(google_application_credentials_path)
             # os.environ["GOOGLE_CLOUD_PROJECT"] = self.project_id
 
+    def get_instance_status(self) -> str:
+        """Get the current status of the instance"""
+        try:
+            instance = self.compute_client.get(project=self.project_id, zone=self.zone, instance=self.instance_id)
+            return instance.status
+        except Exception as e:
+            self.service_logger.error(f"Failed to get instance status: {str(e)}")
+            return "UNKNOWN"
+
     def start(self) -> bool:
-        self.service_logger.info(f"Starting the instance...")
+        instance_status = self.get_instance_status()
+        if instance_status == "TERMINATED":
+            self.service_logger.info(f"Starting the instance...")
+        elif instance_status == "RUNNING":
+            return True
+
         try:
             operation = self.compute_client.start(project=self.project_id, zone=self.zone, instance=self.instance_id)
             operation.result()
             return True
         except Exception as e:
-            self.service_logger.error(f"Failed to stop instance {self.project_id}: {str(e)}")
+            self.service_logger.error(f"Failed to start instance {self.project_id}: {str(e)}")
             return False
 
     def get_ip(self) -> str:

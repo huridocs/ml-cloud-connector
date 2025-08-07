@@ -1,6 +1,6 @@
 [project]
 name = "ml-cloud-connector"
-version = "2025.07.22.01"
+version = "2025.08.07.01"
 description = "This tool is a ml cloud connector"
 license = { file = "LICENSE" }
 authors = [{ name = "HURIDOCS" }]
