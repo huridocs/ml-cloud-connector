@@ -27,7 +27,7 @@ class AutomaticShutDownUseCase:
             return False
 
         try:
-            command = ["docker", "logs", "--tail", "1", self.DOCKER_CONTAINER_TO_FOLLOW]
+            command = ["docker", "logs", "--tail", "50", self.DOCKER_CONTAINER_TO_FOLLOW]
             last_log = subprocess.check_output(command, stderr=subprocess.STDOUT).decode()
             if last_log != self.container_last_log:
                 self.container_last_log = last_log

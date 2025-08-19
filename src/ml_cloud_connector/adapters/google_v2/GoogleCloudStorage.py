@@ -80,6 +80,6 @@ class GoogleCloudStorage(StorageProviderRepository):
 if __name__ == "__main__":
     server_parameters = ServerParameters(namespace="google_v2", server_type=ServerType.METADATA_EXTRACTION)
     gcs = GoogleCloudStorage(server_parameters, logging.getLogger())
-    gcs.upload_to_cloud("tenant_1", Path())
-    gcs.copy_from_cloud(Path("tenant_1", "extraction_id_2"), Path())
+    # gcs.upload_to_cloud("tenant_1", Path())
+    # gcs.copy_from_cloud(Path("tenant_1", "extraction_id_2"), Path())
     gcs.delete_from_cloud("tenant_1", "extraction_id")
