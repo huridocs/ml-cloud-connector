@@ -23,7 +23,7 @@ class ExecuteOnCloudUseCase:
         reconnect = False
         self.service_logger.info(f"Cloud Connector: {rest_call}")
 
-        while reconnect_trial_count < 10:
+        while reconnect_trial_count < 5:
             try:
                 try:
                     if not self.ip:
