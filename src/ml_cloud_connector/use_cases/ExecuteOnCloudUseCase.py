@@ -46,7 +46,7 @@ class ExecuteOnCloudUseCase:
                 requests.exceptions.Timeout,
                 ReadTimeout,
             ) as e:
-                if request_trial_count == 20:
+                if request_trial_count == 5:
                     return None, False, "There is a problem with getting the response."
                 self.service_logger.warning(f"{e} {rest_call} Retrying in 30 seconds.. [Trial: {request_trial_count + 1}]")
                 time.sleep(30)
