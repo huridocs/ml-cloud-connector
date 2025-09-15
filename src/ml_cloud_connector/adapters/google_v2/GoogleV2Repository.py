@@ -22,6 +22,9 @@ class GoogleV2Repository(CloudProviderRepository):
         self.compute_client = compute_v1.InstancesClient()
         self.compute = discovery.build("compute", "v1")
 
+    def is_properly_configured(self) -> bool:
+        return all([self.project_id, self.zone, self.instance_id])
+
     def login(self):
         credentials = os.environ.get("CREDENTIALS", "")
 
@@ -43,6 +46,9 @@ class GoogleV2Repository(CloudProviderRepository):
             return "UNKNOWN"
 
     def start(self) -> bool:
+        if not self.is_properly_configured():
+            return False
+
         instance_status = self.get_instance_status()
         if instance_status == "TERMINATED":
             self.service_logger.info(f"Starting the instance...")

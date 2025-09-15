@@ -10,6 +10,10 @@ class CloudProviderRepository(ABC):
         self.service_logger = service_logger
 
     @abstractmethod
+    def is_properly_configured(self) -> bool:
+        pass
+
+    @abstractmethod
     def start(self) -> bool:
         pass
 
