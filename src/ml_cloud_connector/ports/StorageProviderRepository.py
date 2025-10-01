@@ -21,3 +21,7 @@ class StorageProviderRepository(ABC):
     @abstractmethod
     def is_properly_configured(self) -> bool:
         pass
+
+    @staticmethod
+    def could_be_configured():
+        return True

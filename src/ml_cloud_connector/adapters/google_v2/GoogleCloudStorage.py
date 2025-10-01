@@ -79,6 +79,14 @@ class GoogleCloudStorage(StorageProviderRepository):
     def is_properly_configured(self) -> bool:
         return all([self.project_id, self.bucket_name, os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")])
 
+    @staticmethod
+    def could_be_configured() -> bool:
+        if not os.getenv("PROJECT_ID", ""):
+            return False
+        if not os.getenv("CREDENTIALS", "") and not os.getenv("GOOGLE_APPLICATION_CREDENTIALS", ""):
+            return False
+        return True
+
 
 if __name__ == "__main__":
     server_parameters = ServerParameters(namespace="google_v2", server_type=ServerType.METADATA_EXTRACTION)
