@@ -17,3 +17,7 @@ class StorageProviderRepository(ABC):
     @abstractmethod
     def upload_to_cloud(self, folder_name: str, path: Path) -> bool:
         pass
+
+    @abstractmethod
+    def is_properly_configured(self) -> bool:
+        pass
