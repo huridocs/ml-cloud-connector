@@ -4,5 +4,5 @@ from ml_cloud_connector.domain.ServerType import ServerType
 
 
 class ServerParameters(BaseModel):
-    namespace: str
+    namespace: str = ""
     server_type: ServerType
