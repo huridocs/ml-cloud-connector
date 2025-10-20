@@ -12,13 +12,13 @@ from ml_cloud_connector.ports.CloudProviderRepository import CloudProviderReposi
 class OpenStackProvider(CloudProviderRepository):
     def __init__(self, server_parameters: ServerParameters, service_logger: logging.Logger):
         super().__init__(server_parameters, service_logger)
-        self.auth_url = os.getenv(f"{server_parameters.namespace}AUTH_URL", "")
-        self.username = os.getenv(f"{server_parameters.namespace}USERNAME", "")
-        self.password = os.getenv(f"{server_parameters.namespace}PASSWORD", "")
-        self.project_name = os.getenv(f"{server_parameters.namespace}PROJECT_NAME", "")
-        self.project_domain_name = os.getenv(f"{server_parameters.namespace}PROJECT_DOMAIN_NAME", "default")
-        self.user_domain_name = os.getenv(f"{server_parameters.namespace}USER_DOMAIN_NAME", "default")
-        self.region_name = os.getenv(f"{server_parameters.namespace}REGION_NAME", "")
+        self.auth_url = os.getenv(f"AUTH_URL", "")
+        self.username = os.getenv(f"USERNAME", "")
+        self.password = os.getenv(f"PASSWORD", "")
+        self.project_name = os.getenv(f"PROJECT_NAME", "")
+        self.project_domain_name = os.getenv(f"PROJECT_DOMAIN_NAME", "default")
+        self.user_domain_name = os.getenv(f"USER_DOMAIN_NAME", "default")
+        self.region_name = os.getenv(f"REGION_NAME", "")
         self.instance_id = os.getenv(f"{server_parameters.namespace}INSTANCE_ID", "")
         self.conn = None
         if self.is_properly_configured():
