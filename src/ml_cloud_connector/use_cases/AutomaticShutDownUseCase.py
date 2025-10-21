@@ -4,6 +4,8 @@ import subprocess
 import sys
 import time
 
+from ml_cloud_connector.ports.CloudProviderRepository import CloudProviderRepository
+
 
 class AutomaticShutDownUseCase:
     GPU_MEMORY_THRESHOLD = int(os.environ.get("GPU_MEMORY_THRESHOLD", 10000))
@@ -13,7 +15,7 @@ class AutomaticShutDownUseCase:
     CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", 30))
     DOCKER_CONTAINER_TO_FOLLOW = os.environ.get("DOCKER_CONTAINER_TO_FOLLOW", "")
 
-    def __init__(self):
+    def __init__(self, cloud_provider: CloudProviderRepository = None):
         self.logger = logging.getLogger("AutomaticShutDownUseCase")
         self.logger.setLevel(logging.INFO)
         formatter = logging.Formatter(fmt="%(asctime)s %(name)s.%(levelname)s: %(message)s", datefmt="%Y.%m.%d %H:%M:%S")
@@ -21,6 +23,7 @@ class AutomaticShutDownUseCase:
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
         self.container_last_log = ""
+        self.cloud_provider = cloud_provider
 
     def is_docker_container_active(self):
         if self.DOCKER_CONTAINER_TO_FOLLOW == "":
@@ -92,7 +95,13 @@ class AutomaticShutDownUseCase:
                 )
                 if idle_time > self.INACTIVITY_TIME_THRESHOLD:
                     self.log_to_journal("Inactivity threshold reached. Shutting down...")
-                    os.system("sudo shutdown now")
+                    if self.cloud_provider and self.cloud_provider.is_properly_configured():
+                        try:
+                            self.cloud_provider.shelve()
+                        except Exception as e:
+                            self.log_to_journal(f"Error stopping instance via cloud provider: {e}")
+                    else:
+                        os.system("sudo shutdown now")
 
             time.sleep(self.CHECK_INTERVAL)
 
@@ -101,7 +110,3 @@ class AutomaticShutDownUseCase:
             self.logger.info(message)
         except:
             pass
-
-
-if __name__ == "__main__":
-    AutomaticShutDownUseCase().automatic_shutdown()

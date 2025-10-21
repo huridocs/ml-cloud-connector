@@ -24,3 +24,6 @@ class CloudProviderRepository(ABC):
     @abstractmethod
     def restart(self) -> bool:
         pass
+
+    def shelve(self):
+        pass
