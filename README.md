@@ -34,3 +34,25 @@ python3 src/ml_cloud_connector/create_post_start_script.py
 <h2>Stop automatic shutdown</h2>
 
 sudo kill -9 $(pgrep -f automatic_shutdown)
+
+## Setup Ubuntu machine
+
+How to Run the Setup
+
+Save the files: Save the code blocks above into two files: install_driver.sh and setup_docker.sh.
+
+#### Make them executable:
+
+    chmod +x install_driver.sh setup_docker.sh
+
+#### Run Part 1:
+
+    ./install_driver.sh
+
+Your system will reboot shortly after the drivers are installed.
+
+#### Run Part 2: After the system reboots and you log back in, run:
+
+    ./setup_docker.sh
+
+You will need to log out and log back in one final time to use the docker command without sudo.
