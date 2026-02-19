@@ -16,7 +16,7 @@ class ExecuteOnCloudUseCase:
         self.service_logger = service_logger
         self.ip = ""
 
-    def execute(self, rest_call: RestCall) -> (Optional[Response], bool, str):
+    def execute(self, rest_call: RestCall) -> tuple[Optional[Response], bool, str]:
         connection_wait_time = 0
         reconnect_trial_count = 0
         request_trial_count = 0
