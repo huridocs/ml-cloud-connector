@@ -20,9 +20,10 @@ class GoogleServerless(ServerlessProviderRepository):
         super().__init__(server_parameters, service_logger)
         self._id_token: str | None = None
         self._token_fetched_at: float = 0
+        self.base_url = os.getenv("GOOGLE_OLLAMA_URL", "")
 
     def is_properly_configured(self) -> bool:
-        return os.getenv("GOOGLE_OLLAMA_URL", "") != "" and os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "") != ""
+        return self.base_url != "" and os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "") != ""
 
     def _get_id_token(self) -> str:
         current_time = time.time()
@@ -33,7 +34,7 @@ class GoogleServerless(ServerlessProviderRepository):
             return self._id_token
 
         auth_req = google.auth.transport.requests.Request()
-        self._id_token = google.oauth2.id_token.fetch_id_token(auth_req, self.target_url)
+        self._id_token = google.oauth2.id_token.fetch_id_token(auth_req, self.base_url)
         self._token_fetched_at = current_time
         return self._id_token
 
@@ -48,11 +49,9 @@ class GoogleServerless(ServerlessProviderRepository):
         headers.update(rest_call.headers)
 
         if isinstance(rest_call.endpoint, list):
-            path = "/" + "/".join(rest_call.endpoint)
+            endpoint = "/".join(rest_call.endpoint)
         else:
-            path = rest_call.endpoint if rest_call.endpoint else ""
-
-        url = f"{self.target_url}{path}"
+            endpoint = rest_call.endpoint if rest_call.endpoint else ""
 
         if rest_call.data is not None:
             data = rest_call.data if isinstance(rest_call.data, str) else json.dumps(rest_call.data)
@@ -63,7 +62,7 @@ class GoogleServerless(ServerlessProviderRepository):
 
         response = requests.request(
             method=rest_call.method,
-            url=url,
+            url=endpoint,
             headers=headers,
             data=data,
             timeout=rest_call.timeout,
@@ -75,7 +74,6 @@ class GoogleServerless(ServerlessProviderRepository):
 if __name__ == "__main__":
     server_parameters = ServerParameters(namespace="google_v2", server_type="TRANSLATIONS")
     google_serverless = GoogleServerless(server_parameters, logging.getLogger())
-    target_url = os.getenv("GOOGLE_OLLAMA_URL", "")
     raw_prompt = """Please translate the following text into {language_to_name}. Follow these guidelines:
 1. Maintain the original layout and formatting.
 2. Translate all text accurately without omitting any part of the content.
@@ -91,9 +89,10 @@ Here is the text to be translated:
 """
     prompt = raw_prompt.format(language_to_name="Spanish", text_to_translate="please translate this text")
     rest_call = RestCall(
-        endpoint=target_url + "/api/generate",
+        endpoint=[os.getenv("GOOGLE_OLLAMA_URL", ""), "/api/generate"],
         method="POST",
-        data=json.dumps({"model": "ali6parmak/hy-mt1.5:latest", "prompt": prompt, "stream": False}),
+        data={"model": "ali6parmak/hy-mt1.5:latest", "prompt": prompt, "stream": False},
+        port=8080,
     )
     response = google_serverless.make_request(rest_call)
     print(response["response"])
