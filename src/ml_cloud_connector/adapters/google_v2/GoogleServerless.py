@@ -38,7 +38,7 @@ class GoogleServerless(ServerlessProviderRepository):
         self._token_fetched_at = current_time
         return self._id_token
 
-    def make_request(self, rest_call: RestCall) -> Any:
+    def make_request(self, rest_call: RestCall) -> dict[str, Any]:
         if not self.is_properly_configured():
             raise ValueError(
                 "GoogleServerless is not properly configured. Set GOOGLE_OLLAMA_URL and GOOGLE_APPLICATION_CREDENTIALS environment variable."

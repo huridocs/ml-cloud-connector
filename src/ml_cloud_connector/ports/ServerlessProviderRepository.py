@@ -1,5 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
+from typing import Any
 
 from ml_cloud_connector.domain.RestCall import RestCall
 from ml_cloud_connector.domain.ServerParameters import ServerParameters
@@ -15,5 +16,5 @@ class ServerlessProviderRepository(ABC):
         pass
 
     @abstractmethod
-    def make_request(self, rest_call: RestCall):
+    def make_request(self, rest_call: RestCall) -> dict[str, Any]:
         pass
