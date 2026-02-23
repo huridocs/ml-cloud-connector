@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import time
+from pathlib import Path
 from typing import Any
 
 import google.auth.transport.requests
@@ -21,6 +22,18 @@ class GoogleServerless(ServerlessProviderRepository):
         self._id_token: str | None = None
         self._token_fetched_at: float = 0
         self.base_url = os.getenv("GOOGLE_OLLAMA_URL", "")
+        self.login()
+
+    @staticmethod
+    def login():
+        credentials = os.environ.get("CREDENTIALS", "")
+
+        if not os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "") and credentials:
+            google_application_credentials_path = Path("/", "tmp", "credentials.json")
+            if type(credentials) == str and '"' == credentials.strip()[0] and '"' == credentials.strip()[-1]:
+                credentials = json.dumps(json.loads(credentials.strip()[1:-1]))
+            google_application_credentials_path.write_text(credentials)
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(google_application_credentials_path)
 
     def is_properly_configured(self) -> bool:
         return self.base_url != "" and os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "") != ""
