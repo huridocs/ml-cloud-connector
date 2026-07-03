@@ -100,7 +100,7 @@ Here is the text to be translated:
 {text_to_translate}
 ```
 """
-    prompt = raw_prompt.format(language_to_name="Spanish", text_to_translate="please translate this text")
+    prompt = raw_prompt.format(language_to_name="en", text_to_translate="Esta es la biografía que se necesita traducir.")
     rest_call = RestCall(
         endpoint=[os.getenv("GOOGLE_OLLAMA_URL", ""), "/api/generate"],
         method="POST",
